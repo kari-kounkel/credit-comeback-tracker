@@ -217,11 +217,64 @@ export default function App() {
   const totalSaved = state.savings.reduce((s,v) => s+(v||0), 0);
   const curScore = state.creditScores[currentMonth] || 0;
 
+  const printReport = () => {
+    const bills = state.bills[currentMonth] || [];
+    const totalBud = bills.reduce((s,b) => s+(b.budgeted||0), 0);
+    const totalAct = bills.reduce((s,b) => s+(b.actual||0), 0);
+    const score = state.creditScores[currentMonth] || "Not entered";
+    const saved = state.savings[currentMonth] || 0;
+    const totalSavedAll = state.savings.reduce((s,v) => s+(v||0), 0);
+
+    const w = window.open('','','width=800,height=900');
+    w.document.write(`<!DOCTYPE html><html><head><title>Credit Comeback Report - ${MONTHS[currentMonth]}</title>
+    <style>body{font-family:Georgia,serif;padding:40px;color:#222;max-width:700px;margin:0 auto;}
+    h1{color:#B8860B;border-bottom:2px solid #B8860B;padding-bottom:8px;}
+    h2{color:#B8860B;margin-top:28px;font-size:18px;}
+    table{width:100%;border-collapse:collapse;margin:12px 0;}
+    th,td{padding:8px 12px;border:1px solid #ddd;text-align:right;font-size:13px;}
+    th{background:#f5f0e0;text-align:left;font-weight:bold;}
+    td:first-child{text-align:left;}
+    .summary{display:flex;justify-content:space-between;gap:20px;margin:16px 0;}
+    .summary div{flex:1;padding:16px;background:#f9f6ee;border-radius:8px;text-align:center;}
+    .summary .label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;}
+    .summary .value{font-size:22px;font-weight:bold;color:#B8860B;margin-top:4px;}
+    .green{color:#228B22;} .red{color:#DC143C;}
+    .footer{margin-top:40px;text-align:center;font-size:11px;color:#999;border-top:1px solid #ddd;padding-top:16px;}
+    @media print{body{padding:20px;}}
+    </style></head><body>
+    <h1>The Credit Comeback Tracker</h1>
+    <p style="color:#888;font-style:italic;">Monthly Report — ${MONTHS[currentMonth]} ${new Date().getFullYear()}</p>
+    <div class="summary">
+      <div><div class="label">Monthly Income</div><div class="value">${fmt(totalIncome)}</div></div>
+      <div><div class="label">Total Spent</div><div class="value">${fmt(totalAct)}</div></div>
+      <div><div class="label">Remaining</div><div class="value" style="color:${totalIncome-totalAct>=0?'#228B22':'#DC143C'}">${fmt(totalIncome-totalAct)}</div></div>
+    </div>
+    <h2>Bills & Expenses</h2>
+    <table><thead><tr><th>Expense</th><th>Type</th><th>Budgeted</th><th>Actual</th><th>Diff</th><th>Status</th></tr></thead><tbody>
+    ${bills.map(b => {const d=(b.budgeted||0)-(b.actual||0); return `<tr><td>${b.name}</td><td>${b.type}</td><td>${fmt(b.budgeted)}</td><td>${fmt(b.actual)}</td><td class="${d>=0?'green':'red'}">${d>=0?'+':''}${d.toFixed(2)}</td><td>${STATUS_LABELS[b.status]}</td></tr>`;}).join('')}
+    <tr style="font-weight:bold;background:#f5f0e0;"><td>TOTALS</td><td></td><td>${fmt(totalBud)}</td><td>${fmt(totalAct)}</td><td class="${totalBud-totalAct>=0?'green':'red'}">${(totalBud-totalAct>=0?'+':'')}${(totalBud-totalAct).toFixed(2)}</td><td></td></tr>
+    </tbody></table>
+    <div class="summary">
+      <div><div class="label">Credit Score</div><div class="value">${score}</div></div>
+      <div><div class="label">Saved This Month</div><div class="value">${fmt(saved)}</div></div>
+      <div><div class="label">Total Saved (YTD)</div><div class="value">${fmt(totalSavedAll)} / $20,000</div></div>
+    </div>
+    <div class="footer">The Credit Comeback Tracker · Powered by CARES Workflows / Kari Hoglund Kounkel<br/>Now go be brilliant.</div>
+    </body></html>`);
+    w.document.close();
+    w.print();
+  };
+
   const cycleStatus = (i) => update(s => { s.bills[currentMonth][i].status = STATUSES[(STATUSES.indexOf(s.bills[currentMonth][i].status)+1)%STATUSES.length]; });
 
   return (
     <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0f0f23 0%,#1a1a2e 40%,#16213e 100%)",fontFamily:"'DM Sans',sans-serif",color:"#e0e0e0"}}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet"/>
+
+      {/* BETA BANNER */}
+      <div style={{background:"linear-gradient(90deg,rgba(212,168,83,0.2),rgba(212,168,83,0.1))",padding:"8px 20px",textAlign:"center",fontSize:12,color:"#D4A853",borderBottom:"1px solid rgba(212,168,83,0.2)"}}>
+        🧪 <strong>Beta Preview</strong> — Your data saves to this browser. Don't clear your history or you'll lose it! Full accounts coming soon.
+      </div>
 
       {/* HEADER */}
       <div style={{background:"linear-gradient(135deg,rgba(212,168,83,0.12) 0%,rgba(212,168,83,0.03) 100%)",borderBottom:"1px solid rgba(212,168,83,0.2)",padding:"24px 20px 16px"}}>
@@ -434,10 +487,11 @@ export default function App() {
         </>}
 
         {/* Footer */}
-        <div style={{marginTop:40,textAlign:"center",padding:20,borderTop:"1px solid rgba(255,255,255,0.06)",fontSize:12,color:"#555"}}>
+        <div style={{marginTop:40,textAlign:"center",padding:20,borderTop:"1px solid rgba(255,255,255,0.06)"}}>
+          <button onClick={printReport} style={{padding:"10px 24px",borderRadius:8,border:"1px solid rgba(212,168,83,0.3)",background:"rgba(212,168,83,0.1)",color:"#D4A853",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",marginBottom:16}}>🖨️ Print {MONTHS[currentMonth]} Report</button>
           <div style={{fontFamily:"'Playfair Display',serif",color:"#D4A853",fontSize:14,marginBottom:4}}>The Credit Comeback Tracker</div>
-          <div>Part of The Credit Comeback Kit by CARES Consulting Inc.</div>
-          <div style={{marginTop:8,fontStyle:"italic",color:"#777"}}>Now go be brilliant.</div>
+          <div style={{fontSize:12,color:"#555"}}>Powered by CARES Workflows / Kari Hoglund Kounkel</div>
+          <div style={{marginTop:8,fontStyle:"italic",color:"#777",fontSize:12}}>Now go be brilliant.</div>
         </div>
       </div>
     </div>

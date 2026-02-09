@@ -10,6 +10,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showAddExpense, setShowAddExpense] = useState(false);
+  const [billView, setBillView] = useState("category"); // "category" or "ladder"
   const [syncStatus, setSyncStatus] = useState("saved");
   const saveTimer = useRef(null);
 
@@ -140,7 +141,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
 
           {/* Tabs */}
           <div style={{ display: "flex", gap: 4, marginTop: 12, borderBottom: "1px solid " + t.cardBorder, overflowX: "auto" }}>
-            {[["dashboard", "📊", "Dashboard"], ["bills", "📋", "Bills & Budget"], ["credit", "⭐", "Credit Score"], ["savings", "🏦", "Savings"]].map(([id, icon, label]) => (
+            {[["dashboard", "📊", "Dashboard"], ["bills", "📋", "Bills & Budget"], ["tank", "🏦", "Holding Tank"], ["credit", "⭐", "Credit Score"], ["savings", "💰", "Savings"]].map(([id, icon, label]) => (
               <button key={id} onClick={() => setActiveTab(id)} style={{ padding: "8px 16px", border: "none", borderBottom: activeTab === id ? "2px solid " + t.gold : "2px solid transparent", background: "transparent", color: activeTab === id ? t.gold : t.textMuted, fontSize: 13, fontWeight: activeTab === id ? 600 : 400, cursor: "pointer", transition: "all 0.2s", fontFamily: "'DM Sans',sans-serif", whiteSpace: "nowrap" }}>{icon} {label}</button>
             ))}
           </div>
@@ -210,8 +211,14 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
         {activeTab === "bills" && (
           <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
-              <h2 style={{ color: t.gold, fontFamily: "'Playfair Display',serif", fontSize: 20, margin: 0 }}>{MONTHS[currentMonth]} — Bills & Budget</h2>
-              <button onClick={() => setShowAddExpense(true)} style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "linear-gradient(135deg," + t.gold + ",#B8860B)", color: t.btnText, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>+ Add Expense</button>
+              <h2 style={{ color: t.gold, fontFamily: "'Playfair Display',serif", fontSize: 20, margin: 0 }}>{MONTHS[currentMonth]} — {billView === "ladder" ? "Bill Ladder" : "Bills & Budget"}</h2>
+              <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", borderRadius: 8, overflow: "hidden", border: "1px solid " + t.cardBorder }}>
+                  <button onClick={() => setBillView("category")} style={{ padding: "6px 12px", border: "none", background: billView === "category" ? t.gold + "33" : "transparent", color: billView === "category" ? t.gold : t.textMuted, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>By Category</button>
+                  <button onClick={() => setBillView("ladder")} style={{ padding: "6px 12px", border: "none", borderLeft: "1px solid " + t.cardBorder, background: billView === "ladder" ? t.gold + "33" : "transparent", color: billView === "ladder" ? t.gold : t.textMuted, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>Bill Ladder</button>
+                </div>
+                <button onClick={() => setShowAddExpense(true)} style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "linear-gradient(135deg," + t.gold + ",#B8860B)", color: t.btnText, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>+ Add Expense</button>
+              </div>
             </div>
 
             {/* Tip */}
@@ -236,7 +243,64 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                   ))}
                 </div>
               </div>
+            ) : billView === "ladder" ? (
+              /* ── BILL LADDER VIEW ── sorted by due date */
+              <>
+                <div style={{ padding: "10px 16px", background: t.gold + "11", border: "1px solid " + t.gold + "33", borderRadius: 10, marginBottom: 16, fontSize: 12, color: t.gold, lineHeight: 1.5 }}>
+                  {"🪜"} <strong>Bill Ladder:</strong> Your bills in the order they hit — sorted by due date. Pay from top to bottom using last month's income from your Holding Tank.
+                </div>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr>
+                        {["Due", "Expense", "Category", "Budgeted", "Actual", "Diff", "Status", ""].map((h) => (
+                          <th key={h} style={{ padding: "8px 10px", textAlign: h === "Expense" || h === "Category" ? "left" : "center", fontSize: 10, color: t.textMuted, textTransform: "uppercase", letterSpacing: 1, borderBottom: "1px solid " + t.cardBorder, fontWeight: 600 }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...bills].map((b, origIdx) => ({ ...b, _idx: origIdx })).sort((a, b) => (a.dueDay || 99) - (b.dueDay || 99)).map((b, sortedIdx, arr) => {
+                        const diff = (b.budgeted || 0) - (b.actual || 0);
+                        const prevDay = sortedIdx > 0 ? arr[sortedIdx - 1].dueDay : null;
+                        const showDivider = prevDay !== null && b.dueDay !== prevDay;
+                        return (
+                          <tr key={b._idx} style={{ borderBottom: "1px solid " + t.cardBorder, borderTop: showDivider ? "2px solid " + t.gold + "33" : "none" }}>
+                            <td style={{ padding: "10px", textAlign: "center", fontFamily: "'DM Mono',monospace", fontSize: 15, fontWeight: 700, color: t.gold }}>{b.dueDay || "—"}</td>
+                            <td style={{ padding: "10px", fontSize: 13, color: t.text }}>{b.name}</td>
+                            <td style={{ padding: "10px", fontSize: 11, color: t.textMuted }}>{CAT_EMOJIS[b.category] || "📦"} {b.category || "Other"}</td>
+                            <td style={{ padding: "10px", textAlign: "center" }}><NumCell value={b.budgeted} onChange={(v) => update((s) => { s.bills[currentMonth][b._idx].budgeted = v; })} theme={theme} /></td>
+                            <td style={{ padding: "10px", textAlign: "center" }}><NumCell value={b.actual} onChange={(v) => update((s) => { s.bills[currentMonth][b._idx].actual = v; })} theme={theme} /></td>
+                            <td style={{ padding: "10px", textAlign: "center", fontFamily: "'DM Mono',monospace", fontSize: 13, color: diff >= 0 ? t.green : t.red }}>{diff >= 0 ? "+" : "−"}{fmt(Math.abs(diff))}</td>
+                            <td style={{ padding: "10px", textAlign: "center" }}>
+                              <span onClick={() => cycleStatus(b._idx)} style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer", background: STATUS_COLORS[b.status] + "22", color: STATUS_COLORS[b.status], border: "1px solid " + STATUS_COLORS[b.status] + "44" }}>{STATUS_LABELS[b.status]}</span>
+                            </td>
+                            <td style={{ padding: "10px", textAlign: "center" }}>
+                              <button onClick={() => { if (confirm('Remove "' + b.name + '"?')) removeExpense(b._idx); }} style={{ cursor: "pointer", color: t.red, fontSize: 12, padding: "4px 8px", borderRadius: 6, border: "1px solid " + t.red + "33", background: t.red + "11", fontFamily: "'DM Sans',sans-serif", fontWeight: 600 }}>{"✕"}</button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Running total by due date */}
+                {(() => {
+                  const sorted = [...bills].sort((a, b) => (a.dueDay || 99) - (b.dueDay || 99));
+                  let runningTotal = totalIncome;
+                  const rows = [];
+                  let currentDay = null;
+                  sorted.forEach((b) => {
+                    if (b.dueDay !== currentDay) {
+                      currentDay = b.dueDay;
+                    }
+                    runningTotal -= (b.budgeted || 0);
+                  });
+                  return null;
+                })()}
+              </>
             ) : (
+              /* ── CATEGORY VIEW ── grouped by category */
               Object.entries(grouped).map(([cat, items]) => (
                 <div key={cat} style={{ marginBottom: 16 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, padding: "8px 0", borderBottom: "1px solid " + t.cardBorder }}>
@@ -295,6 +359,112 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
             )}
 
             <SidebarNote theme={theme}>Your bills are not your enemy. They're the receipts of the life you're building. The budget column is your plan. The actual column is what happened. The difference between those two? That's where your power lives. Even $3 of awareness beats $300 of denial.</SidebarNote>
+          </>
+        )}
+
+        {/* HOLDING TANK TAB */}
+        {activeTab === "tank" && (
+          <>
+            <h2 style={{ color: t.gold, fontFamily: "'Playfair Display',serif", fontSize: 20, margin: "0 0 8px" }}>{"🏦"} Holding Tank Ledger</h2>
+            <p style={{ color: t.textMuted, fontSize: 13, margin: "0 0 20px", lineHeight: 1.6 }}>The two-book system: last month's income pays this month's bills. Your Holding Tank is where money sits between earning it and spending it.</p>
+
+            {/* How it works */}
+            <div style={{ padding: "16px 20px", background: t.gold + "11", border: "1px solid " + t.gold + "33", borderRadius: 12, marginBottom: 20, fontSize: 13, color: t.gold, lineHeight: 1.8 }}>
+              <strong>How the Holding Tank works:</strong>
+              <div style={{ marginTop: 8, color: t.textMuted }}>
+                <span style={{ color: t.gold }}>1.</span> You earn income this month (say {MONTHS[currentMonth]}). It goes into the Tank.{" "}
+                <span style={{ color: t.gold }}>2.</span> On the 1st of next month, you start paying bills from the Tank using your Bill Ladder.{" "}
+                <span style={{ color: t.gold }}>3.</span> Whatever is left after all bills = your breathing room.
+              </div>
+            </div>
+
+            {/* Tank overview cards */}
+            {(() => {
+              const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+              const prevIncome = state.income.reduce((s, i) => s + (i.amount || 0), 0); // Using current income as estimate
+              const prevBills = (state.bills[prevMonth] || []);
+              const prevTotalBudgeted = prevBills.reduce((s, b) => s + (b.budgeted || 0), 0);
+
+              const tankDeposit = prevIncome; // Last month's income
+              const thisMonthBills = bills.reduce((s, b) => s + (b.budgeted || 0), 0);
+              const thisMonthPaid = bills.reduce((s, b) => s + (b.actual || 0), 0);
+              const tankRemaining = tankDeposit - thisMonthPaid;
+              const tankProjected = tankDeposit - thisMonthBills;
+
+              return (
+                <>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 12, marginBottom: 20 }}>
+                    {[
+                      { label: MONTHS[prevMonth] + " Income (Deposited)", value: fmt(tankDeposit), color: t.gold },
+                      { label: MONTHS[currentMonth] + " Bills (Budgeted)", value: fmt(thisMonthBills), color: t.textMuted },
+                      { label: "Spent So Far", value: fmt(thisMonthPaid), color: t.text },
+                      { label: "Tank Remaining", value: (tankRemaining >= 0 ? "+" : "−") + fmt(Math.abs(tankRemaining)), color: tankRemaining >= 0 ? t.green : t.red },
+                    ].map((s) => (
+                      <div key={s.label} style={{ background: t.cardBg, border: "1px solid " + t.cardBorder, borderRadius: 12, padding: 16, textAlign: "center" }}>
+                        <div style={{ fontSize: 10, color: t.textMuted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{s.label}</div>
+                        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 20, fontWeight: 700, color: s.color }}>{s.value}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Tank progress bar */}
+                  <div style={{ background: t.cardBg, border: "1px solid " + t.cardBorder, borderRadius: 12, padding: 20, marginBottom: 20 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                      <span style={{ fontSize: 12, color: t.textMuted }}>Tank Depletion</span>
+                      <span style={{ fontSize: 12, color: t.textMuted }}>{tankDeposit > 0 ? Math.round((thisMonthPaid / tankDeposit) * 100) : 0}% deployed</span>
+                    </div>
+                    <div style={{ width: "100%", background: t.cardBorder, borderRadius: 8, height: 16, overflow: "hidden", position: "relative" }}>
+                      <div style={{ width: (tankDeposit > 0 ? Math.min((thisMonthBills / tankDeposit) * 100, 100) : 0) + "%", height: "100%", background: t.gold + "33", borderRadius: 8, position: "absolute" }} />
+                      <div style={{ width: (tankDeposit > 0 ? Math.min((thisMonthPaid / tankDeposit) * 100, 100) : 0) + "%", height: "100%", background: thisMonthPaid > tankDeposit ? t.red : t.green, borderRadius: 8, position: "absolute", transition: "width 0.5s ease" }} />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 11 }}>
+                      <span style={{ color: t.green }}>{"●"} Paid</span>
+                      <span style={{ color: t.gold }}>{"●"} Budgeted</span>
+                    </div>
+                  </div>
+
+                  {/* Bill deployment list — ladder order */}
+                  <div style={{ background: t.cardBg, border: "1px solid " + t.cardBorder, borderRadius: 12, padding: 20 }}>
+                    <h3 style={{ color: t.gold, fontSize: 14, fontWeight: 700, margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>{MONTHS[currentMonth]} Bill Deployment</h3>
+                    {bills.length === 0 ? (
+                      <div style={{ textAlign: "center", padding: 20, color: t.textMuted, fontSize: 13 }}>No bills yet. Add expenses in the Bills & Budget tab.</div>
+                    ) : (
+                      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                        <thead>
+                          <tr>
+                            {["Due", "Expense", "Budgeted", "Paid", "Status", "Tank After"].map((h) => (
+                              <th key={h} style={{ padding: "8px 10px", textAlign: h === "Expense" ? "left" : "center", fontSize: 10, color: t.textMuted, textTransform: "uppercase", letterSpacing: 1, borderBottom: "1px solid " + t.cardBorder, fontWeight: 600 }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(() => {
+                            let runningTank = tankDeposit;
+                            return [...bills].map((b, i) => ({ ...b, _idx: i })).sort((a, b) => (a.dueDay || 99) - (b.dueDay || 99)).map((b) => {
+                              runningTank -= (b.actual || 0);
+                              return (
+                                <tr key={b._idx} style={{ borderBottom: "1px solid " + t.cardBorder }}>
+                                  <td style={{ padding: "10px", textAlign: "center", fontFamily: "'DM Mono',monospace", fontSize: 15, fontWeight: 700, color: t.gold }}>{b.dueDay || "—"}</td>
+                                  <td style={{ padding: "10px", fontSize: 13, color: t.text }}>{b.name}</td>
+                                  <td style={{ padding: "10px", textAlign: "center", fontFamily: "'DM Mono',monospace", fontSize: 13, color: t.textMuted }}>{fmt(b.budgeted || 0)}</td>
+                                  <td style={{ padding: "10px", textAlign: "center", fontFamily: "'DM Mono',monospace", fontSize: 13, color: b.actual ? t.text : t.textFaint }}>{b.actual ? fmt(b.actual) : "—"}</td>
+                                  <td style={{ padding: "10px", textAlign: "center" }}>
+                                    <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: STATUS_COLORS[b.status] + "22", color: STATUS_COLORS[b.status], border: "1px solid " + STATUS_COLORS[b.status] + "44" }}>{STATUS_LABELS[b.status]}</span>
+                                  </td>
+                                  <td style={{ padding: "10px", textAlign: "center", fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 700, color: runningTank >= 0 ? t.green : t.red }}>{runningTank >= 0 ? "+" : "−"}{fmt(Math.abs(runningTank))}</td>
+                                </tr>
+                              );
+                            });
+                          })()}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
+
+            <SidebarNote theme={theme}>The Holding Tank is the difference between "I hope I can cover this" and "I already did." When you stop spending money the same month you earn it, something shifts in your chest. You stop chasing. You start choosing. That's not budgeting — that's sovereignty over your own dollar bills.</SidebarNote>
           </>
         )}
 

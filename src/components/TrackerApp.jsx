@@ -80,7 +80,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
     .green{color:#228B22;}.red{color:#DC143C;}.footer{margin-top:40px;text-align:center;font-size:11px;color:#999;border-top:1px solid #ddd;padding-top:16px;}
     @media print{body{padding:20px;}}</style></head><body>
     <h1>The Credit Comeback Tracker</h1>
-    <p style="color:#888;font-style:italic;">Monthly Report \u2014 ${MONTHS[currentMonth]} ${new Date().getFullYear()}</p>
+    <p style="color:#888;font-style:italic;">Monthly Report — ${MONTHS[currentMonth]} ${new Date().getFullYear()}</p>
     <div class="summary">
       <div><div class="label">Monthly Income</div><div class="value">${fmt(totalIncome)}</div></div>
       <div><div class="label">Total Spent</div><div class="value">${fmt(totalAct)}</div></div>
@@ -88,14 +88,14 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
     </div>
     <h2>Bills & Budget</h2>
     <table><thead><tr><th>Expense</th><th>Category</th><th>Due</th><th>Budgeted</th><th>Actual</th><th>Status</th></tr></thead><tbody>
-    ${bills.map((b) => `<tr><td>${b.name}</td><td>${b.category || "Other"}</td><td>${b.dueDay || "\u2014"}</td><td>${fmt(b.budgeted)}</td><td>${fmt(b.actual)}</td><td>${STATUS_LABELS[b.status]}</td></tr>`).join("")}
+    ${bills.map((b) => `<tr><td>${b.name}</td><td>${b.category || "Other"}</td><td>${b.dueDay || "—"}</td><td>${fmt(b.budgeted)}</td><td>${fmt(b.actual)}</td><td>${STATUS_LABELS[b.status]}</td></tr>`).join("")}
     </tbody></table>
     <div class="summary">
       <div><div class="label">Credit Score</div><div class="value">${sc}</div></div>
       <div><div class="label">Saved This Month</div><div class="value">${fmt(saved)}</div></div>
       <div><div class="label">Total Saved (YTD)</div><div class="value">${fmt(totalSavedAll)} / $20,000</div></div>
     </div>
-    <div class="footer">The Credit Comeback Tracker \u00b7 Powered by CARES Workflows / Kari Hoglund Kounkel<br/>Now go be brilliant.</div>
+    <div class="footer">The Credit Comeback Tracker · Powered by CARES Workflows / Kari Hoglund Kounkel<br/>Now go be brilliant.</div>
     </body></html>`);
     w.document.close();
     w.print();
@@ -107,7 +107,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
 
       {/* SYNC BAR */}
       <div style={{ background: syncStatus === "saving" ? t.gold + "22" : syncStatus === "error" ? t.red + "22" : t.green + "14", padding: "4px 20px", textAlign: "center", fontSize: 11, color: syncStatus === "saving" ? t.gold : syncStatus === "error" ? t.red : t.green, borderBottom: "1px solid " + t.cardBorder, transition: "all 0.3s" }}>
-        {syncStatus === "saving" ? "\u2601\uFE0F Saving..." : syncStatus === "error" ? "\u26A0\uFE0F Sync error \u2014 data saved locally" : "\u2601\uFE0F Synced to your account"}
+        {syncStatus === "saving" ? "☁️ Saving..." : syncStatus === "error" ? "⚠️ Sync error — data saved locally" : "☁️ Synced to your account"}
       </div>
 
       {/* HEADER */}
@@ -116,7 +116,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
             <div>
               <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 800, color: t.gold, margin: 0, letterSpacing: "-0.5px" }}>The Credit Comeback Tracker</h1>
-              <p style={{ color: t.textMuted, fontSize: 12, margin: "2px 0 0", fontStyle: "italic" }}>Budget · Pay · Save · Rebuild \u2014 One month at a time.</p>
+              <p style={{ color: t.textMuted, fontSize: 12, margin: "2px 0 0", fontStyle: "italic" }}>Budget · Pay · Save · Rebuild — One month at a time.</p>
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 10, color: t.textMuted, letterSpacing: 1, textTransform: "uppercase" }}>Save $20K Goal</div>
@@ -124,7 +124,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
               <div style={{ marginTop: 6, width: 200, marginLeft: "auto" }}><ProgressBar current={totalSaved} goal={SAVINGS_GOAL} color={t.green} theme={theme} /></div>
               <div style={{ marginTop: 8, display: "flex", gap: 6, justifyContent: "flex-end" }}>
                 <button onClick={() => { const next = theme === "dark" ? "light" : "dark"; setTheme(next); localStorage.setItem(THEME_KEY, next); }} style={{ padding: "4px 12px", borderRadius: 6, border: "1px solid " + t.cardBorder, background: "transparent", color: t.textMuted, fontSize: 11, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
-                  {theme === "dark" ? "\u2600\uFE0F Light" : "\uD83C\uDF19 Dark"}
+                  {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
                 </button>
                 <button onClick={onLogout} style={{ padding: "4px 12px", borderRadius: 6, border: "1px solid " + t.cardBorder, background: "transparent", color: t.textMuted, fontSize: 11, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>Sign Out</button>
               </div>
@@ -140,7 +140,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
 
           {/* Tabs */}
           <div style={{ display: "flex", gap: 4, marginTop: 12, borderBottom: "1px solid " + t.cardBorder, overflowX: "auto" }}>
-            {[["dashboard", "\uD83D\uDCCA", "Dashboard"], ["bills", "\uD83D\uDCCB", "Bills & Budget"], ["credit", "\u2B50", "Credit Score"], ["savings", "\uD83C\uDFE6", "Savings"]].map(([id, icon, label]) => (
+            {[["dashboard", "📊", "Dashboard"], ["bills", "📋", "Bills & Budget"], ["credit", "⭐", "Credit Score"], ["savings", "🏦", "Savings"]].map(([id, icon, label]) => (
               <button key={id} onClick={() => setActiveTab(id)} style={{ padding: "8px 16px", border: "none", borderBottom: activeTab === id ? "2px solid " + t.gold : "2px solid transparent", background: "transparent", color: activeTab === id ? t.gold : t.textMuted, fontSize: 13, fontWeight: activeTab === id ? 600 : 400, cursor: "pointer", transition: "all 0.2s", fontFamily: "'DM Sans',sans-serif", whiteSpace: "nowrap" }}>{icon} {label}</button>
             ))}
           </div>
@@ -158,7 +158,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                 { label: "Monthly Income", value: fmt(totalIncome), color: t.gold },
                 { label: "Total Budgeted", value: fmt(totalBudgeted), color: t.textMuted },
                 { label: "Total Spent", value: fmt(totalActual), color: t.text },
-                { label: "Remaining", value: (remaining >= 0 ? "+" : "\u2212") + fmt(Math.abs(remaining)), color: remaining >= 0 ? t.green : t.red },
+                { label: "Remaining", value: (remaining >= 0 ? "+" : "−") + fmt(Math.abs(remaining)), color: remaining >= 0 ? t.green : t.red },
               ].map((s) => (
                 <div key={s.label} style={{ background: t.cardBg, border: "1px solid " + t.cardBorder, borderRadius: 12, padding: 16, textAlign: "center" }}>
                   <div style={{ fontSize: 10, color: t.textMuted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{s.label}</div>
@@ -169,7 +169,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
 
             {/* Income */}
             <div style={{ background: t.cardBg, border: "1px solid " + t.cardBorder, borderRadius: 12, padding: 20, marginBottom: 16 }}>
-              <h3 style={{ color: t.gold, fontSize: 14, fontWeight: 700, margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>{"\uD83D\uDCB0"} Income Sources</h3>
+              <h3 style={{ color: t.gold, fontSize: 14, fontWeight: 700, margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>{"💰"} Income Sources</h3>
               {state.income.map((src, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < state.income.length - 1 ? "1px solid " + t.cardBorder : "none" }}>
                   <input value={src.name} onChange={(e) => update((s) => { s.income[i].name = e.target.value; })} style={{ background: "transparent", border: "none", color: t.text, fontSize: 14, fontFamily: "'DM Sans',sans-serif", outline: "none", flex: 1 }} />
@@ -181,11 +181,11 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
 
             {/* Payment Status */}
             <div style={{ background: t.cardBg, border: "1px solid " + t.cardBorder, borderRadius: 12, padding: 20 }}>
-              <h3 style={{ color: t.gold, fontSize: 14, fontWeight: 700, margin: "0 0 4px", textTransform: "uppercase", letterSpacing: 1 }}>{"\uD83D\uDCCB"} {MONTHS[currentMonth]} Payment Status</h3>
-              <p style={{ color: t.textMuted, fontSize: 12, margin: "0 0 12px" }}>Tap status to cycle: Unpaid {"\u2192"} Upcoming {"\u2192"} Partial {"\u2192"} Paid</p>
+              <h3 style={{ color: t.gold, fontSize: 14, fontWeight: 700, margin: "0 0 4px", textTransform: "uppercase", letterSpacing: 1 }}>{"📋"} {MONTHS[currentMonth]} Payment Status</h3>
+              <p style={{ color: t.textMuted, fontSize: 12, margin: "0 0 12px" }}>Tap status to cycle: Unpaid {"→"} Upcoming {"→"} Partial {"→"} Paid</p>
               {bills.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "30px 20px", color: t.textMuted }}>
-                  <div style={{ fontSize: 28, marginBottom: 8 }}>{"\uD83D\uDCDD"}</div>
+                  <div style={{ fontSize: 28, marginBottom: 8 }}>{"📝"}</div>
                   <div style={{ fontSize: 14, marginBottom: 4 }}>No expenses yet for {MONTHS[currentMonth]}</div>
                   <div style={{ fontSize: 12, color: t.textFaint }}>Go to the Bills & Budget tab to add your first expense!</div>
                 </div>
@@ -199,10 +199,10 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                   ))}
                 </div>
               )}
-              {bills.length > 0 && <div style={{ marginTop: 12, fontSize: 13, color: t.textMuted }}>{paidCount} of {bills.length} paid{paidCount === bills.length && bills.length > 0 ? " \u2014 \uD83C\uDF89 All bills paid this month!" : ""}</div>}
+              {bills.length > 0 && <div style={{ marginTop: 12, fontSize: 13, color: t.textMuted }}>{paidCount} of {bills.length} paid{paidCount === bills.length && bills.length > 0 ? " — 🎉 All bills paid this month!" : ""}</div>}
             </div>
 
-            <SidebarNote theme={theme}>The dashboard is your cockpit. Not the kind where you white-knuckle the controls \u2014 the kind where you sip your coffee and watch the gauges move in the right direction. If the "Remaining" number is green, you're winning. If it's red, you're not broken \u2014 you're informed. And informed is the first step out of chaos.</SidebarNote>
+            <SidebarNote theme={theme}>The dashboard is your cockpit. Not the kind where you white-knuckle the controls — the kind where you sip your coffee and watch the gauges move in the right direction. If the "Remaining" number is green, you're winning. If it's red, you're not broken — you're informed. And informed is the first step out of chaos.</SidebarNote>
           </>
         )}
 
@@ -210,18 +210,22 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
         {activeTab === "bills" && (
           <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
-              <h2 style={{ color: t.gold, fontFamily: "'Playfair Display',serif", fontSize: 20, margin: 0 }}>{MONTHS[currentMonth]} \u2014 Bills & Budget</h2>
+              <h2 style={{ color: t.gold, fontFamily: "'Playfair Display',serif", fontSize: 20, margin: 0 }}>{MONTHS[currentMonth]} — Bills & Budget</h2>
               <button onClick={() => setShowAddExpense(true)} style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "linear-gradient(135deg," + t.gold + ",#B8860B)", color: t.btnText, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>+ Add Expense</button>
             </div>
 
             {/* Tip */}
-            <div style={{ padding: "10px 16px", background: t.gold + "11", border: "1px solid " + t.gold + "33", borderRadius: 10, marginBottom: 16, fontSize: 12, color: t.gold, lineHeight: 1.5 }}>
-              {"\uD83D\uDCA1"} <strong>Make it yours:</strong> Add your actual bills using + Add Expense. Set the amount once and it fills across all selected months. You can override any individual month later.
+            <div style={{ padding: "10px 16px", background: t.gold + "11", border: "1px solid " + t.gold + "33", borderRadius: 10, marginBottom: 16, fontSize: 12, color: t.gold, lineHeight: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+              <span>{"💡"} <strong>Make it yours:</strong> Add your actual bills using + Add Expense. Set the amount once and it fills across all selected months. You can override any individual month later.</span>
+              {bills.length > 0 && (
+                <button onClick={() => { if (confirm("Clear ALL bills for EVERY month? This gives you a fresh start to add your own.")) update((s) => { for (let m = 0; m < 12; m++) s.bills[m] = []; }); }}
+                  style={{ padding: "4px 12px", borderRadius: 6, border: "1px solid " + t.red + "33", background: t.red + "11", color: t.red, fontSize: 11, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontWeight: 600, whiteSpace: "nowrap" }}>Clear All Bills</button>
+              )}
             </div>
 
             {bills.length === 0 ? (
               <div style={{ background: t.cardBg, border: "1px solid " + t.cardBorder, borderRadius: 12, padding: "40px 20px", textAlign: "center" }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>{"\uD83E\uDDFE"}</div>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>{"🧾"}</div>
                 <div style={{ fontSize: 18, fontWeight: 600, color: t.text, marginBottom: 8 }}>Start Building Your Budget</div>
                 <div style={{ fontSize: 13, color: t.textMuted, maxWidth: 400, margin: "0 auto 20px", lineHeight: 1.6 }}>
                   Tap <strong>+ Add Expense</strong> to add your bills. Here are some common ones:
@@ -236,7 +240,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
               Object.entries(grouped).map(([cat, items]) => (
                 <div key={cat} style={{ marginBottom: 16 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, padding: "8px 0", borderBottom: "1px solid " + t.cardBorder }}>
-                    <span style={{ fontSize: 18 }}>{CAT_EMOJIS[cat] || "\uD83D\uDCE6"}</span>
+                    <span style={{ fontSize: 18 }}>{CAT_EMOJIS[cat] || "📦"}</span>
                     <span style={{ fontSize: 14, fontWeight: 700, color: t.gold, textTransform: "uppercase", letterSpacing: 1 }}>{cat}</span>
                     <span style={{ fontSize: 12, color: t.textMuted }}>({items.length})</span>
                   </div>
@@ -258,12 +262,12 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                               <td style={{ padding: "10px", textAlign: "center" }}><DayCell value={b.dueDay} onChange={(v) => update((s) => { s.bills[currentMonth][b._idx].dueDay = v; })} theme={theme} /></td>
                               <td style={{ padding: "10px", textAlign: "center" }}><NumCell value={b.budgeted} onChange={(v) => update((s) => { s.bills[currentMonth][b._idx].budgeted = v; })} theme={theme} /></td>
                               <td style={{ padding: "10px", textAlign: "center" }}><NumCell value={b.actual} onChange={(v) => update((s) => { s.bills[currentMonth][b._idx].actual = v; })} theme={theme} /></td>
-                              <td style={{ padding: "10px", textAlign: "center", fontFamily: "'DM Mono',monospace", fontSize: 13, color: diff >= 0 ? t.green : t.red }}>{diff >= 0 ? "+" : "\u2212"}{fmt(Math.abs(diff))}</td>
+                              <td style={{ padding: "10px", textAlign: "center", fontFamily: "'DM Mono',monospace", fontSize: 13, color: diff >= 0 ? t.green : t.red }}>{diff >= 0 ? "+" : "−"}{fmt(Math.abs(diff))}</td>
                               <td style={{ padding: "10px", textAlign: "center" }}>
                                 <span onClick={() => cycleStatus(b._idx)} style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer", background: STATUS_COLORS[b.status] + "22", color: STATUS_COLORS[b.status], border: "1px solid " + STATUS_COLORS[b.status] + "44" }}>{STATUS_LABELS[b.status]}</span>
                               </td>
                               <td style={{ padding: "10px", textAlign: "center" }}>
-                                <button onClick={() => { if (confirm('Remove "' + b.name + '"?')) removeExpense(b._idx); }} style={{ cursor: "pointer", color: t.red, fontSize: 12, padding: "4px 8px", borderRadius: 6, border: "1px solid " + t.red + "33", background: t.red + "11", fontFamily: "'DM Sans',sans-serif", fontWeight: 600 }}>{"\u2715"}</button>
+                                <button onClick={() => { if (confirm('Remove "' + b.name + '"?')) removeExpense(b._idx); }} style={{ cursor: "pointer", color: t.red, fontSize: 12, padding: "4px 8px", borderRadius: 6, border: "1px solid " + t.red + "33", background: t.red + "11", fontFamily: "'DM Sans',sans-serif", fontWeight: 600 }}>{"✕"}</button>
                               </td>
                             </tr>
                           );
@@ -280,7 +284,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                 {[
                   { label: "Total Budgeted", value: fmt(totalBudgeted), color: t.gold },
                   { label: "Total Spent", value: fmt(totalActual), color: t.text },
-                  { label: "Difference", value: (totalBudgeted - totalActual >= 0 ? "+" : "\u2212") + fmt(Math.abs(totalBudgeted - totalActual)), color: totalBudgeted - totalActual >= 0 ? t.green : t.red },
+                  { label: "Difference", value: (totalBudgeted - totalActual >= 0 ? "+" : "−") + fmt(Math.abs(totalBudgeted - totalActual)), color: totalBudgeted - totalActual >= 0 ? t.green : t.red },
                 ].map((s) => (
                   <div key={s.label} style={{ textAlign: "center" }}>
                     <div style={{ fontSize: 10, color: t.textMuted, textTransform: "uppercase", letterSpacing: 1 }}>{s.label}</div>
@@ -297,7 +301,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
         {/* CREDIT SCORE TAB */}
         {activeTab === "credit" && (
           <>
-            <h2 style={{ color: t.gold, fontFamily: "'Playfair Display',serif", fontSize: 20, margin: "0 0 20px" }}>{"\u2B50"} Credit Score Tracker</h2>
+            <h2 style={{ color: t.gold, fontFamily: "'Playfair Display',serif", fontSize: 20, margin: "0 0 20px" }}>{"⭐"} Credit Score Tracker</h2>
 
             {/* Current Score */}
             <div style={{ background: t.gold + "18", border: "1px solid " + t.gold + "33", borderRadius: 16, padding: 28, textAlign: "center", marginBottom: 20 }}>
@@ -308,17 +312,17 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
 
             {/* Workbook Promo */}
             <div style={{ background: t.green + "12", border: "1px solid " + t.green + "33", borderRadius: 12, padding: 20, marginBottom: 20 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: t.text, marginBottom: 6 }}>{"\uD83D\uDCD8"} Want the full strategy behind the numbers?</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: t.text, marginBottom: 6 }}>{"📘"} Want the full strategy behind the numbers?</div>
               <div style={{ fontSize: 13, color: t.textMuted, lineHeight: 1.6, marginBottom: 12 }}>
-                <strong>The Credit Comeback Kit</strong> walks you through everything step by step \u2014 from understanding your credit report to building a payoff plan that actually sticks. 100+ pages of real talk, real strategy.
+                <strong>The Credit Comeback Kit</strong> walks you through everything step by step — from understanding your credit report to building a payoff plan that actually sticks. 100+ pages of real talk, real strategy.
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                <a href={WORKBOOK_URL} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", padding: "10px 24px", borderRadius: 8, background: "linear-gradient(135deg," + t.gold + ",#B8860B)", color: t.btnText, fontSize: 14, fontWeight: 700, textDecoration: "none", fontFamily: "'DM Sans',sans-serif" }}>Get the Kit \u2014 $9.99</a>
+                <a href={WORKBOOK_URL} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", padding: "10px 24px", borderRadius: 8, background: "linear-gradient(135deg," + t.gold + ",#B8860B)", color: t.btnText, fontSize: 14, fontWeight: 700, textDecoration: "none", fontFamily: "'DM Sans',sans-serif" }}>Get the Kit — $9.99</a>
                 <span style={{ fontSize: 12, color: t.gold, fontStyle: "italic" }}>Launch price through March 31</span>
               </div>
               <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid " + t.cardBorder }}>
                 <div style={{ fontSize: 13, color: t.textMuted, lineHeight: 1.6 }}>
-                  {"\uD83D\uDC9B"} <strong>Cost shouldn't stop your comeback.</strong>{" "}
+                  {"💛"} <strong>Cost shouldn't stop your comeback.</strong>{" "}
                   <a href={JOTFORM_URL} target="_blank" rel="noopener noreferrer" style={{ color: t.gold, textDecoration: "underline" }}>Reach out</a> and we'll figure it out together.
                 </div>
               </div>
@@ -326,7 +330,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
 
             {/* Milestones */}
             <div style={{ background: t.cardBg, border: "1px solid " + t.cardBorder, borderRadius: 12, padding: 20, marginBottom: 20 }}>
-              <h3 style={{ color: t.gold, fontSize: 14, fontWeight: 700, margin: "0 0 16px", textTransform: "uppercase", letterSpacing: 1 }}>{"\uD83C\uDFAF"} Milestones</h3>
+              <h3 style={{ color: t.gold, fontSize: 14, fontWeight: 700, margin: "0 0 16px", textTransform: "uppercase", letterSpacing: 1 }}>{"🎯"} Milestones</h3>
               {MILESTONES.map((m) => (
                 <div key={m.score} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", opacity: score >= m.score ? 1 : 0.4 }}>
                   <span style={{ fontSize: 20 }}>{m.emoji}</span>
@@ -341,25 +345,25 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
 
             {/* Score History */}
             <div style={{ background: t.cardBg, border: "1px solid " + t.cardBorder, borderRadius: 12, padding: 20 }}>
-              <h3 style={{ color: t.gold, fontSize: 14, fontWeight: 700, margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>{"\uD83D\uDCC8"} Score History</h3>
+              <h3 style={{ color: t.gold, fontSize: 14, fontWeight: 700, margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>{"📈"} Score History</h3>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(80px,1fr))", gap: 8 }}>
                 {MONTHS.map((m, i) => (
                   <div key={m} style={{ textAlign: "center", padding: 8, borderRadius: 8, background: i === currentMonth ? t.gold + "18" : "transparent", border: i === currentMonth ? "1px solid " + t.gold + "33" : "1px solid transparent" }}>
                     <div style={{ fontSize: 11, color: i === currentMonth ? t.gold : t.textMuted, marginBottom: 4 }}>{m}</div>
-                    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 16, fontWeight: 700, color: state.creditScores[i] ? t.text : t.textFaint }}>{state.creditScores[i] || "\u2014"}</div>
+                    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 16, fontWeight: 700, color: state.creditScores[i] ? t.text : t.textFaint }}>{state.creditScores[i] || "—"}</div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <SidebarNote theme={theme}>Your credit score is not your identity. It's a number on a screen that changes when you change. Every on-time payment is a tiny act of defiance against the version of you that thought this couldn't be fixed. You're not climbing a ladder \u2014 you're building one. Rung by rung. Month by month.</SidebarNote>
+            <SidebarNote theme={theme}>Your credit score is not your identity. It's a number on a screen that changes when you change. Every on-time payment is a tiny act of defiance against the version of you that thought this couldn't be fixed. You're not climbing a ladder — you're building one. Rung by rung. Month by month.</SidebarNote>
           </>
         )}
 
         {/* SAVINGS TAB */}
         {activeTab === "savings" && (
           <>
-            <h2 style={{ color: t.gold, fontFamily: "'Playfair Display',serif", fontSize: 20, margin: "0 0 20px" }}>{"\uD83C\uDFE6"} Savings Tracker</h2>
+            <h2 style={{ color: t.gold, fontFamily: "'Playfair Display',serif", fontSize: 20, margin: "0 0 20px" }}>{"🏦"} Savings Tracker</h2>
 
             <div style={{ background: t.green + "18", border: "1px solid " + t.green + "33", borderRadius: 16, padding: 28, textAlign: "center", marginBottom: 20 }}>
               <div style={{ fontSize: 11, color: t.textMuted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Total Saved</div>
@@ -380,17 +384,17 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
               </div>
             </div>
 
-            <SidebarNote theme={theme}>Savings doesn't start with a windfall. It starts with the $13 you didn't spend at the drive-through. It shows up in the $47 you didn't spend on things that don't love you back. Enter what you saved each month. Watch the green bar move. That bar is your future arguing with your past \u2014 and winning.</SidebarNote>
+            <SidebarNote theme={theme}>Savings doesn't start with a windfall. It starts with the $13 you didn't spend at the drive-through. It shows up in the $47 you didn't spend on things that don't love you back. Enter what you saved each month. Watch the green bar move. That bar is your future arguing with your past — and winning.</SidebarNote>
           </>
         )}
 
         {/* FOOTER */}
         <div style={{ marginTop: 40, textAlign: "center", padding: 20, borderTop: "1px solid " + t.cardBorder }}>
-          <button onClick={printReport} style={{ padding: "10px 24px", borderRadius: 8, border: "1px solid " + t.gold + "44", background: t.gold + "15", color: t.gold, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", marginBottom: 16 }}>{"\uD83D\uDDA8\uFE0F"} Print {MONTHS[currentMonth]} Report</button>
+          <button onClick={printReport} style={{ padding: "10px 24px", borderRadius: 8, border: "1px solid " + t.gold + "44", background: t.gold + "15", color: t.gold, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", marginBottom: 16 }}>{"🖨️"} Print {MONTHS[currentMonth]} Report</button>
           <div style={{ fontFamily: "'Playfair Display',serif", color: t.gold, fontSize: 14, marginBottom: 4 }}>The Credit Comeback Tracker</div>
           <div style={{ fontSize: 12, color: t.textMuted }}>Powered by CARES Workflows / Kari Hoglund Kounkel</div>
           <div style={{ marginTop: 8 }}>
-            <a href={WORKBOOK_URL} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: t.gold, textDecoration: "none", fontStyle: "italic" }}>{"\uD83D\uDCD8"} Get The Credit Comeback Kit \u2014 $9.99</a>
+            <a href={WORKBOOK_URL} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: t.gold, textDecoration: "none", fontStyle: "italic" }}>{"📘"} Get The Credit Comeback Kit — $9.99</a>
           </div>
           <div style={{ marginTop: 8, fontStyle: "italic", color: t.textFaint, fontSize: 12 }}>Now go be brilliant.</div>
         </div>

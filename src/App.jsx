@@ -113,10 +113,84 @@ function Card({ children, style }) {
   return <div style={{background:"#1a1a2e",borderRadius:12,padding:20,border:"1px solid rgba(212,168,83,0.15)",marginBottom:16,...style}}>{children}</div>;
 }
 
+// Add Expense Modal
+function AddExpenseModal({ onAdd, onClose, currentMonth }) {
+  const [name, setName] = useState("");
+  const [type, setType] = useState("variable");
+  const [frequency, setFrequency] = useState("every");
+  const [selectedMonths, setSelectedMonths] = useState(Array(12).fill(false));
+  const [dueDay, setDueDay] = useState(1);
+  const [budgeted, setBudgeted] = useState("");
+
+  const toggleMonth = (i) => { const m = [...selectedMonths]; m[i]=!m[i]; setSelectedMonths(m); };
+
+  const handleAdd = () => {
+    if (!name.trim()) return;
+    let months = [];
+    if (frequency === "every") months = [0,1,2,3,4,5,6,7,8,9,10,11];
+    else if (frequency === "this") months = [currentMonth];
+    else months = selectedMonths.map((v,i) => v?i:-1).filter(i=>i>=0);
+    onAdd({ name: name.trim(), type, dueDay: parseInt(dueDay)||1, budgeted: parseFloat(budgeted)||0, months });
+  };
+
+  const overlay = {position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:20};
+  const modal = {background:"#1a1a2e",borderRadius:16,padding:28,border:"1px solid rgba(212,168,83,0.3)",maxWidth:440,width:"100%",maxHeight:"90vh",overflowY:"auto"};
+  const label = {fontSize:11,color:"#888",textTransform:"uppercase",letterSpacing:1,marginBottom:6,display:"block"};
+  const input = {width:"100%",padding:"8px 12px",background:"#0f0f23",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,color:"#e0e0e0",fontFamily:"'DM Sans',sans-serif",fontSize:14,outline:"none",marginBottom:16};
+  const radioRow = {display:"flex",gap:8,marginBottom:12,flexWrap:"wrap"};
+  const radioBtn = (active) => ({padding:"6px 14px",borderRadius:8,border:active?"1px solid #D4A853":"1px solid rgba(255,255,255,0.1)",background:active?"rgba(212,168,83,0.2)":"rgba(255,255,255,0.03)",color:active?"#D4A853":"#888",fontSize:12,fontWeight:active?700:500,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"});
+  const monthBtn = (active) => ({padding:"4px 8px",borderRadius:6,border:active?"1px solid #D4A853":"1px solid rgba(255,255,255,0.08)",background:active?"rgba(212,168,83,0.2)":"rgba(255,255,255,0.03)",color:active?"#D4A853":"#666",fontSize:11,fontWeight:active?700:500,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"});
+
+  return (
+    <div style={overlay} onClick={onClose}>
+      <div style={modal} onClick={e => e.stopPropagation()}>
+        <h3 style={{margin:"0 0 20px",fontSize:18,color:"#D4A853",fontFamily:"'Playfair Display',serif"}}>Add Expense</h3>
+
+        <label style={label}>Expense Name</label>
+        <input style={input} value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Car Insurance" autoFocus/>
+
+        <label style={label}>Type</label>
+        <div style={radioRow}>
+          {[["fixed","Fixed"],["variable","Variable"],["debt","Debt"]].map(([v,l]) => (
+            <button key={v} style={radioBtn(type===v)} onClick={() => setType(v)}>{l}</button>
+          ))}
+        </div>
+
+        <label style={label}>Due Day of Month</label>
+        <input style={{...input,width:80}} type="number" value={dueDay} onChange={e => setDueDay(e.target.value)} min={1} max={31}/>
+
+        <label style={label}>Budgeted Amount</label>
+        <input style={{...input,width:120}} type="number" value={budgeted} onChange={e => setBudgeted(e.target.value)} placeholder="0.00"/>
+
+        <label style={label}>How Often?</label>
+        <div style={radioRow}>
+          {[["every","Every Month"],["this","Just "+MONTHS[currentMonth]],["select","Select Months"]].map(([v,l]) => (
+            <button key={v} style={radioBtn(frequency===v)} onClick={() => setFrequency(v)}>{l}</button>
+          ))}
+        </div>
+
+        {frequency === "select" && (
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:16}}>
+            {MONTHS.map((m,i) => (
+              <button key={m} style={monthBtn(selectedMonths[i])} onClick={() => toggleMonth(i)}>{m}</button>
+            ))}
+          </div>
+        )}
+
+        <div style={{display:"flex",gap:12,marginTop:8}}>
+          <button onClick={onClose} style={{flex:1,padding:"10px 16px",borderRadius:8,border:"1px solid rgba(255,255,255,0.1)",background:"transparent",color:"#888",fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Cancel</button>
+          <button onClick={handleAdd} style={{flex:1,padding:"10px 16px",borderRadius:8,border:"1px solid #D4A853",background:"rgba(212,168,83,0.2)",color:"#D4A853",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Add Expense</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [state, setState] = useState(loadState);
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const save = useCallback((newState) => {
     setState(newState);
@@ -124,6 +198,15 @@ export default function App() {
   }, []);
 
   const update = (fn) => { const s = {...state}; fn(s); save(s); };
+
+  const handleAddExpense = ({ name, type, dueDay, budgeted, months }) => {
+    update(s => {
+      months.forEach(m => {
+        s.bills[m].push({ name, type, budgeted, actual: 0, dueDay, status: "unpaid" });
+      });
+    });
+    setShowAddModal(false);
+  };
 
   // Computed
   const totalIncome = state.income.reduce((s,i) => s+(i.amount||0), 0);
@@ -216,8 +299,9 @@ export default function App() {
         {activeTab === "bills" && <>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
             <h3 style={{margin:0,fontSize:18,color:"#D4A853",fontFamily:"'Playfair Display',serif"}}>{MONTHS[currentMonth]} — Bills & Budget</h3>
-            <button onClick={() => update(s => { for(let m=0;m<12;m++) s.bills[m].push({name:"New Expense",type:"variable",budgeted:0,actual:0,dueDay:1,status:"unpaid"}); })} style={{padding:"6px 16px",borderRadius:8,border:"1px solid rgba(212,168,83,0.3)",background:"rgba(212,168,83,0.1)",color:"#D4A853",fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600}}>+ Add Expense</button>
+            <button onClick={() => setShowAddModal(true)} style={{padding:"6px 16px",borderRadius:8,border:"1px solid rgba(212,168,83,0.3)",background:"rgba(212,168,83,0.1)",color:"#D4A853",fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600}}>+ Add Expense</button>
           </div>
+          {showAddModal && <AddExpenseModal currentMonth={currentMonth} onAdd={handleAddExpense} onClose={() => setShowAddModal(false)}/>}
           <Card>
             <div style={{overflowX:"auto"}}>
               <table style={{width:"100%",borderCollapse:"collapse"}}>

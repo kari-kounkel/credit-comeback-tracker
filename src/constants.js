@@ -30,7 +30,7 @@ export const MILESTONES = [
 export const SAVINGS_GOAL = 20000;
 export const STORAGE_KEY = "creditComebackTracker_v2";
 export const THEME_KEY = "creditTracker_theme";
-export const WORKBOOK_URL = "#"; // Swap with real purchase URL later
+export const WORKBOOK_URL = "https://karikounkel.shop/products/the-credit-comeback-kit-a-90-day-ladder-to-financial-stability";
 export const JOTFORM_URL = "https://form.jotform.com/260390334535050";
 
 export const THEMES = {

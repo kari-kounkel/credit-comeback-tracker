@@ -3,13 +3,37 @@ import { STORAGE_KEY, THEME_KEY, CATEGORIES } from "./constants";
 
 export function makeDefault() {
   const bills = {};
-  for (let m = 0; m < 12; m++) bills[m] = [];
+  const income = {};
+  for (let m = 0; m < 12; m++) {
+    bills[m] = [];
+    income[m] = [];
+  }
   return {
-    income: [{ name: "Primary Job", amount: 0 }, { name: "Side Income", amount: 0 }],
+    income,
     bills,
     creditScores: Array(12).fill(0),
     savings: Array(12).fill(0),
   };
+}
+
+// Migrate old flat income array to per-month format
+export function migrateData(data) {
+  if (!data) return data;
+  // If income is an array (old format), convert to per-month
+  if (Array.isArray(data.income)) {
+    const oldIncome = data.income;
+    const newIncome = {};
+    for (let m = 0; m < 12; m++) {
+      newIncome[m] = oldIncome.map((src) => ({ ...src }));
+    }
+    data.income = newIncome;
+  }
+  // Ensure all months exist
+  for (let m = 0; m < 12; m++) {
+    if (!data.income[m]) data.income[m] = [];
+    if (!data.bills[m]) data.bills[m] = [];
+  }
+  return data;
 }
 
 export function loadLocal() {

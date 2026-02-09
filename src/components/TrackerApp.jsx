@@ -3,6 +3,7 @@ import { THEMES, MONTHS, STATUSES, STATUS_LABELS, STATUS_COLORS, CAT_EMOJIS, MIL
 import { fmt, groupByCategory, saveLocal } from "../helpers";
 import { NumCell, DayCell, ProgressBar, SidebarNote } from "./SharedUI";
 import AddExpenseModal from "./AddExpenseModal";
+import AddIncomeModal, { INCOME_EMOJIS } from "./AddIncomeModal";
 
 export default function TrackerApp({ user, initialData, onSave, onLogout, theme, setTheme }) {
   const t = THEMES[theme] || THEMES.dark;
@@ -10,6 +11,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showAddExpense, setShowAddExpense] = useState(false);
+  const [showAddIncome, setShowAddIncome] = useState(false);
   const [billView, setBillView] = useState("category"); // "category" or "ladder"
   const [syncStatus, setSyncStatus] = useState("saved");
   const saveTimer = useRef(null);
@@ -36,7 +38,8 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
 
   // Derived values
   const bills = state.bills[currentMonth] || [];
-  const totalIncome = state.income.reduce((s, i) => s + (i.amount || 0), 0);
+  const incomeItems = state.income[currentMonth] || [];
+  const totalIncome = incomeItems.reduce((s, i) => s + (i.amount || 0), 0);
   const totalBudgeted = bills.reduce((s, b) => s + (b.budgeted || 0), 0);
   const totalActual = bills.reduce((s, b) => s + (b.actual || 0), 0);
   const remaining = totalIncome - totalActual;
@@ -53,6 +56,16 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
       });
     });
   };
+
+  const addIncome = ({ name, type, amount: amt, months: selectedMonths }) => {
+    update((s) => {
+      selectedMonths.forEach((on, m) => {
+        if (on) s.income[m].push({ name, type, amount: amt });
+      });
+    });
+  };
+
+  const removeIncome = (idx) => { update((s) => { s.income[currentMonth].splice(idx, 1); }); };
 
   const removeExpense = (idx) => { update((s) => { s.bills[currentMonth].splice(idx, 1); }); };
 
@@ -170,14 +183,31 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
 
             {/* Income */}
             <div style={{ background: t.cardBg, border: "1px solid " + t.cardBorder, borderRadius: 12, padding: 20, marginBottom: 16 }}>
-              <h3 style={{ color: t.gold, fontSize: 14, fontWeight: 700, margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>{"💰"} Income Sources</h3>
-              {state.income.map((src, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < state.income.length - 1 ? "1px solid " + t.cardBorder : "none" }}>
-                  <input value={src.name} onChange={(e) => update((s) => { s.income[i].name = e.target.value; })} style={{ background: "transparent", border: "none", color: t.text, fontSize: 14, fontFamily: "'DM Sans',sans-serif", outline: "none", flex: 1 }} />
-                  <NumCell value={src.amount} onChange={(v) => update((s) => { s.income[i].amount = v; })} theme={theme} />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <h3 style={{ color: t.gold, fontSize: 14, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1 }}>{"💰"} {MONTHS[currentMonth]} Income</h3>
+                <button onClick={() => setShowAddIncome(true)} style={{ padding: "6px 16px", borderRadius: 8, border: "none", background: "linear-gradient(135deg," + t.gold + ",#B8860B)", color: t.btnText, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>+ Add Income</button>
+              </div>
+              {incomeItems.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "20px", color: t.textMuted, fontSize: 13 }}>
+                  No income sources for {MONTHS[currentMonth]}. Tap + Add Income to get started.
                 </div>
-              ))}
-              <button onClick={() => update((s) => { s.income.push({ name: "New Source", amount: 0 }); })} style={{ marginTop: 8, padding: "6px 16px", borderRadius: 8, border: "1px dashed " + t.gold + "55", background: "transparent", color: t.gold, fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>+ Add Income Source</button>
+              ) : (
+                incomeItems.map((src, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < incomeItems.length - 1 ? "1px solid " + t.cardBorder : "none" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
+                      <span style={{ fontSize: 14 }}>{INCOME_EMOJIS[src.type] || "💰"}</span>
+                      <div>
+                        <div style={{ fontSize: 13, color: t.text }}>{src.name}</div>
+                        <div style={{ fontSize: 10, color: t.textMuted }}>{src.type || ""}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <NumCell value={src.amount} onChange={(v) => update((s) => { s.income[currentMonth][i].amount = v; })} theme={theme} />
+                      <button onClick={() => { if (confirm('Remove "' + src.name + '" from ' + MONTHS[currentMonth] + '?')) removeIncome(i); }} style={{ cursor: "pointer", color: t.red, fontSize: 12, padding: "4px 8px", borderRadius: 6, border: "1px solid " + t.red + "33", background: t.red + "11", fontFamily: "'DM Sans',sans-serif", fontWeight: 600 }}>{"✕"}</button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
 
             {/* Payment Status */}
@@ -225,7 +255,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
             <div style={{ padding: "10px 16px", background: t.gold + "11", border: "1px solid " + t.gold + "33", borderRadius: 10, marginBottom: 16, fontSize: 12, color: t.gold, lineHeight: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
               <span>{"💡"} <strong>Make it yours:</strong> Add your actual bills using + Add Expense. Set the amount once and it fills across all selected months. You can override any individual month later.</span>
               {bills.length > 0 && (
-                <button onClick={() => { if (confirm("Clear ALL bills for EVERY month? This gives you a fresh start to add your own.")) update((s) => { for (let m = 0; m < 12; m++) s.bills[m] = []; }); }}
+                <button onClick={() => { if (confirm("⚠️ THIS WILL DELETE ALL BILLS — PAST, PRESENT, AND FUTURE.\n\nEvery month will be wiped clean. You'll start completely fresh.\n\nAre you sure?")) update((s) => { for (let m = 0; m < 12; m++) s.bills[m] = []; }); }}
                   style={{ padding: "4px 12px", borderRadius: 6, border: "1px solid " + t.red + "33", background: t.red + "11", color: t.red, fontSize: 11, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontWeight: 600, whiteSpace: "nowrap" }}>Clear All Bills</button>
               )}
             </div>
@@ -381,7 +411,8 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
             {/* Tank overview cards */}
             {(() => {
               const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-              const prevIncome = state.income.reduce((s, i) => s + (i.amount || 0), 0); // Using current income as estimate
+              const prevIncomeItems = state.income[prevMonth] || [];
+              const prevIncome = prevIncomeItems.reduce((s, i) => s + (i.amount || 0), 0);
               const prevBills = (state.bills[prevMonth] || []);
               const prevTotalBudgeted = prevBills.reduce((s, b) => s + (b.budgeted || 0), 0);
 
@@ -571,6 +602,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
       </div>
 
       {showAddExpense && <AddExpenseModal onClose={() => setShowAddExpense(false)} onAdd={addExpense} theme={theme} />}
+      {showAddIncome && <AddIncomeModal onClose={() => setShowAddIncome(false)} onAdd={addIncome} theme={theme} />}
     </div>
   );
 }

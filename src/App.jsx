@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "./supabaseClient";
 import { THEMES, THEME_KEY } from "./constants";
-import { makeDefault, loadLocal, saveLocal, loadTheme, hasLocalData, loadFromCloud, saveToCloud } from "./helpers";
+import { makeDefault, loadLocal, saveLocal, loadTheme, hasLocalData, loadFromCloud, saveToCloud, migrateData } from "./helpers";
 import AuthScreen from "./components/AuthScreen";
 import TrackerApp from "./components/TrackerApp";
 
@@ -54,11 +54,13 @@ export default function App() {
       const localHasStuff = hasLocalData();
 
       if (!cloudData && localHasStuff) {
-        cloudData = localData;
+        cloudData = migrateData(localData);
         try { await saveToCloud(authUser.id, cloudData); } catch (e) { console.error("Migration save failed:", e); }
       } else if (!cloudData) {
         cloudData = makeDefault();
         try { await saveToCloud(authUser.id, cloudData); } catch (e) { console.error("Initial save failed:", e); }
+      } else {
+        cloudData = migrateData(cloudData);
       }
 
       setTrackerData(cloudData);

@@ -762,21 +762,41 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [trackerData, setTrackerData] = useState(null);
+  const [authError, setAuthError] = useState(null);
+  const initDone = useRef(false);
 
   // Check for existing session on mount
   useEffect(() => {
+    // Safety timeout — never stay on loading screen more than 8 seconds
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 8000);
+
     const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        await handleUserReady(session.user);
+      try {
+        // Clear any error fragments from the URL (stale confirmation links, etc.)
+        if (window.location.hash.includes("error")) {
+          window.history.replaceState(null, "", window.location.pathname);
+        }
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          await handleUserReady(session.user);
+        }
+      } catch (e) {
+        console.error("Init error:", e);
       }
+      initDone.current = true;
       setLoading(false);
     };
 
     init();
 
-    // Listen for auth state changes (handles email confirmation redirects, etc.)
+    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Skip if init already handled this session
+      if (!initDone.current) return;
+
       if (event === "SIGNED_IN" && session?.user) {
         await handleUserReady(session.user);
       } else if (event === "SIGNED_OUT") {
@@ -785,39 +805,53 @@ export default function App() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleUserReady = async (authUser) => {
     setUser(authUser);
     setLoading(true);
+    setAuthError(null);
 
-    // 1. Try loading from cloud
-    let cloudData = await loadFromCloud(authUser.id);
+    try {
+      // 1. Try loading from cloud
+      let cloudData = await loadFromCloud(authUser.id);
 
-    // 2. Check for localStorage migration
-    const localData = loadLocal();
-    const localHasData = hasLocalData();
+      // 2. Check for localStorage migration
+      const localData = loadLocal();
+      const localHasStuff = hasLocalData();
 
-    if (!cloudData && localHasData) {
-      // First login with existing local data → migrate to cloud
-      cloudData = localData;
-      await saveToCloud(authUser.id, cloudData);
-      // Clear the migration flag (but keep local as backup)
-    } else if (!cloudData) {
-      // Brand new user, no data anywhere
-      cloudData = makeDefault();
-      await saveToCloud(authUser.id, cloudData);
+      if (!cloudData && localHasStuff) {
+        cloudData = localData;
+        try { await saveToCloud(authUser.id, cloudData); } catch(e) { console.error("Migration save failed:", e); }
+      } else if (!cloudData) {
+        cloudData = makeDefault();
+        try { await saveToCloud(authUser.id, cloudData); } catch(e) { console.error("Initial save failed:", e); }
+      }
+
+      setTrackerData(cloudData);
+      saveLocal(cloudData);
+    } catch (e) {
+      console.error("handleUserReady error:", e);
+      // Fall back to local data or defaults so the app isn't stuck
+      const fallback = loadLocal() || makeDefault();
+      setTrackerData(fallback);
+      setAuthError("Cloud sync had a hiccup — using local data for now.");
     }
 
-    setTrackerData(cloudData);
-    saveLocal(cloudData); // Keep local in sync as backup
     setLoading(false);
   };
 
   const handleSave = useCallback(async (data) => {
     if (user) {
-      await saveToCloud(user.id, data);
+      try {
+        await saveToCloud(user.id, data);
+      } catch(e) {
+        console.error("Save error:", e);
+      }
     }
   }, [user]);
 
@@ -825,13 +859,14 @@ export default function App() {
     await supabase.auth.signOut();
     setUser(null);
     setTrackerData(null);
+    setAuthError(null);
   };
 
   const handleAuth = async (authUser) => {
     await handleUserReady(authUser);
   };
 
-  // Loading screen
+  // Loading screen (with safety timeout — max 8 seconds)
   if (loading) {
     return (
       <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0f0f23 0%,#1a1a2e 40%,#16213e 100%)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"}}>

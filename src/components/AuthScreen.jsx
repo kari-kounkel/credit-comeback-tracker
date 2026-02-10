@@ -108,7 +108,7 @@ export default function AuthScreen({ onAuth, theme, setTheme }) {
           fontFamily: "'DM Sans',sans-serif",
         }}
       >
-        {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
+        {theme === "dark" ? "☀ Cream" : "🌙 Brown"}
       </button>
 
       {/* Title */}
@@ -213,7 +213,7 @@ export default function AuthScreen({ onAuth, theme, setTheme }) {
             style={{
               width: "100%",
               padding: "14px",
-              background: "linear-gradient(135deg," + t.gold + ",#B8860B)",
+              background: "linear-gradient(135deg," + t.gold + "," + t.goldDark + ")",
               border: "none",
               borderRadius: 10,
               color: t.btnText,

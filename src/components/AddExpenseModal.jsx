@@ -131,7 +131,7 @@ export default function AddExpenseModal({ onClose, onAdd, theme }) {
           </button>
           <button
             onClick={submit}
-            style={{ flex: 1, padding: "10px", borderRadius: 8, border: "none", background: "linear-gradient(135deg," + t.gold + ",#B8860B)", color: t.btnText, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}
+            style={{ flex: 1, padding: "10px", borderRadius: 8, border: "none", background: "linear-gradient(135deg," + t.gold + "," + t.goldDark + ")", color: t.btnText, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}
           >
             Add Expense
           </button>

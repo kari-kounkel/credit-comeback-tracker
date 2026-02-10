@@ -138,7 +138,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
               <div style={{ marginTop: 6, width: 200, marginLeft: "auto" }}><ProgressBar current={totalSaved} goal={SAVINGS_GOAL} color={t.green} theme={theme} /></div>
               <div style={{ marginTop: 8, display: "flex", gap: 6, justifyContent: "flex-end" }}>
                 <button onClick={() => { const next = theme === "dark" ? "light" : "dark"; setTheme(next); localStorage.setItem(THEME_KEY, next); }} style={{ padding: "4px 12px", borderRadius: 6, border: "1px solid " + t.cardBorder, background: "transparent", color: t.textMuted, fontSize: 11, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
-                  {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
+                  {theme === "dark" ? "☀ Cream" : "🌙 Brown"}
                 </button>
                 <button onClick={onLogout} style={{ padding: "4px 12px", borderRadius: 6, border: "1px solid " + t.cardBorder, background: "transparent", color: t.textMuted, fontSize: 11, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>Sign Out</button>
               </div>
@@ -185,7 +185,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
             <div style={{ background: t.cardBg, border: "1px solid " + t.cardBorder, borderRadius: 12, padding: 20, marginBottom: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <h3 style={{ color: t.gold, fontSize: 14, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1 }}>{"💰"} {MONTHS[currentMonth]} Income</h3>
-                <button onClick={() => setShowAddIncome(true)} style={{ padding: "6px 16px", borderRadius: 8, border: "none", background: "linear-gradient(135deg," + t.gold + ",#B8860B)", color: t.btnText, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>+ Add Income</button>
+                <button onClick={() => setShowAddIncome(true)} style={{ padding: "6px 16px", borderRadius: 8, border: "none", background: "linear-gradient(135deg," + t.gold + "," + t.goldDark + ")", color: t.btnText, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>+ Add Income</button>
               </div>
               {incomeItems.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "20px", color: t.textMuted, fontSize: 13 }}>
@@ -247,7 +247,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                   <button onClick={() => setBillView("category")} style={{ padding: "6px 12px", border: "none", background: billView === "category" ? t.gold + "33" : "transparent", color: billView === "category" ? t.gold : t.textMuted, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>By Category</button>
                   <button onClick={() => setBillView("ladder")} style={{ padding: "6px 12px", border: "none", borderLeft: "1px solid " + t.cardBorder, background: billView === "ladder" ? t.gold + "33" : "transparent", color: billView === "ladder" ? t.gold : t.textMuted, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>Bill Ladder</button>
                 </div>
-                <button onClick={() => setShowAddExpense(true)} style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "linear-gradient(135deg," + t.gold + ",#B8860B)", color: t.btnText, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>+ Add Expense</button>
+                <button onClick={() => setShowAddExpense(true)} style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "linear-gradient(135deg," + t.gold + "," + t.goldDark + ")", color: t.btnText, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>+ Add Expense</button>
               </div>
             </div>
 
@@ -518,7 +518,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                 <strong>The Credit Comeback Kit</strong> walks you through everything step by step — from understanding your credit report to building a payoff plan that actually sticks. 100+ pages of real talk, real strategy.
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                <a href={WORKBOOK_URL} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", padding: "10px 24px", borderRadius: 8, background: "linear-gradient(135deg," + t.gold + ",#B8860B)", color: t.btnText, fontSize: 14, fontWeight: 700, textDecoration: "none", fontFamily: "'DM Sans',sans-serif" }}>Get the Kit — $9.99</a>
+                <a href={WORKBOOK_URL} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", padding: "10px 24px", borderRadius: 8, background: "linear-gradient(135deg," + t.gold + "," + t.goldDark + ")", color: t.btnText, fontSize: 14, fontWeight: 700, textDecoration: "none", fontFamily: "'DM Sans',sans-serif" }}>Get the Kit — $9.99</a>
                 <span style={{ fontSize: 12, color: t.gold, fontStyle: "italic" }}>Launch price through March 31</span>
               </div>
               <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid " + t.cardBorder }}>

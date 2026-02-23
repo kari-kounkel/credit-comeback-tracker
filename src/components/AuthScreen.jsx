@@ -275,11 +275,14 @@ export default function AuthScreen({ onAuth, theme, setTheme }) {
       )}
 
       {/* Footer */}
-      <div style={{ marginTop: 32, textAlign: "center" }}>
-        <div style={{ fontFamily: "'Playfair Display',serif", color: t.gold + "66", fontSize: 12 }}>
-          Powered by CARES Workflows / Kari Hoglund Kounkel
+      <div style={{ marginTop: 32, textAlign: "center", maxWidth: 400, width: "100%" }}>
+        <div style={{ fontSize: 10, color: t.textFaint, lineHeight: 1.7, marginBottom: 8 }}>
+          Credit Comeback Kit™ is the proprietary intellectual property of<br/>
+          <span style={{ color: t.textMuted, fontWeight: 600 }}>CARES Consulting, Inc. &amp; Kari Hoglund Kounkel</span><br/>
+          © 2025–2026. All rights reserved.<br/>
+          Unauthorized use, duplication, hosting, or distribution is strictly prohibited.
         </div>
-        <div style={{ marginTop: 4, fontStyle: "italic", color: t.textFaint, fontSize: 11 }}>Now go be brilliant.</div>
+        <div style={{ marginTop: 8, fontStyle: "italic", color: t.textFaint, fontSize: 11 }}>Now go be brilliant.</div>
       </div>
     </div>
   );

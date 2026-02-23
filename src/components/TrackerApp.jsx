@@ -109,7 +109,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
       <div><div class="label">Saved This Month</div><div class="value">${fmt(saved)}</div></div>
       <div><div class="label">Total Saved (YTD)</div><div class="value">${fmt(totalSavedAll)} / $20,000</div></div>
     </div>
-    <div class="footer">Credit Comeback Kit™ is the proprietary intellectual property of CARES Consulting, Inc. &amp; Kari Hoglund Kounkel.<br/>© 2025–2026. All rights reserved. Unauthorized use, duplication, hosting, or distribution is strictly prohibited.<br/><em>Now go be brilliant.</em></div>
+    <div class="footer">The Credit Comeback Tracker · Powered by CARES Workflows / Kari Hoglund Kounkel<br/>Now go be brilliant.</div>
     </body></html>`);
     w.document.close();
     w.print();
@@ -593,13 +593,9 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
         <div style={{ marginTop: 40, textAlign: "center", padding: 20, borderTop: "1px solid " + t.cardBorder }}>
           <button onClick={printReport} style={{ padding: "10px 24px", borderRadius: 8, border: "1px solid " + t.gold + "44", background: t.gold + "15", color: t.gold, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", marginBottom: 16 }}>{"🖨️"} Print {MONTHS[currentMonth]} Report</button>
           <div style={{ fontFamily: "'Playfair Display',serif", color: t.gold, fontSize: 14, marginBottom: 4 }}>The Credit Comeback Tracker</div>
+          <div style={{ fontSize: 12, color: t.textMuted }}>Powered by CARES Workflows / Kari Hoglund Kounkel</div>
           <div style={{ marginTop: 8 }}>
             <a href={WORKBOOK_URL} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: t.gold, textDecoration: "none", fontStyle: "italic" }}>{"📘"} Get The Credit Comeback Kit — $9.99</a>
-          </div>
-          <div style={{ marginTop: 12, fontSize: 10, color: t.textFaint, lineHeight: 1.7 }}>
-            Credit Comeback Kit™ is the proprietary intellectual property of<br/>
-            <span style={{ color: t.textMuted, fontWeight: 600 }}>CARES Consulting, Inc. &amp; Kari Hoglund Kounkel</span><br/>
-            © 2025–2026. All rights reserved. Unauthorized use, duplication, hosting, or distribution is strictly prohibited.
           </div>
           <div style={{ marginTop: 8, fontStyle: "italic", color: t.textFaint, fontSize: 12 }}>Now go be brilliant.</div>
         </div>

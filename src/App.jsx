@@ -7,8 +7,7 @@ import TrackerApp from "./components/TrackerApp";
 import CCKTutorial from "./components/CCKTutorial";
 
 export default function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);  const [loading, setLoading] = useState(true);
   const [trackerData, setTrackerData] = useState(null);
   const [authError, setAuthError] = useState(null);
   const [theme, setTheme] = useState(loadTheme);
@@ -103,10 +102,20 @@ export default function App() {
 
   const t = THEMES[theme] || THEMES.dark;
 
+  // Font preload — always render this regardless of state
+  const fontLink = (
+    <>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+    </>
+  );
+
   // Loading screen
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", background: t.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Sans',sans-serif" }}>
+        {fontLink}
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
         <div style={{ textAlign: "center" }}>
           <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, color: t.gold, marginBottom: 12 }}>The Credit Comeback Tracker</div>
@@ -118,12 +127,18 @@ export default function App() {
 
   // Not logged in
   if (!user || !trackerData) {
-    return <AuthScreen onAuth={async (u) => await handleUserReady(u)} theme={theme} setTheme={updateTheme} />;
+    return (
+      <>
+        {fontLink}
+        <AuthScreen onAuth={async (u) => await handleUserReady(u)} theme={theme} setTheme={updateTheme} />
+      </>
+    );
   }
 
   // Logged in
   return (
     <>
+      {fontLink}
       {showTutorial && (
         <CCKTutorial onComplete={() => {
           localStorage.setItem(`tutorial_seen_${user.id}`, "true");

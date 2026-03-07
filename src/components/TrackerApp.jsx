@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { supabase } from "../supabaseClient";
 import { THEMES, MONTHS, STATUSES, STATUS_LABELS, STATUS_COLORS, CAT_EMOJIS, MILESTONES, SAVINGS_GOAL, THEME_KEY, WORKBOOK_URL, JOTFORM_URL } from "../constants";
 import { fmt, groupByCategory, saveLocal } from "../helpers";
 import { NumCell, DayCell, ProgressBar, SidebarNote } from "./SharedUI";
 import AddExpenseModal from "./AddExpenseModal";
 import AddIncomeModal, { INCOME_EMOJIS } from "./AddIncomeModal";
+import WorkbookPages from "./WorkbookPages";
 
 export default function TrackerApp({ user, initialData, onSave, onLogout, theme, setTheme, isDemo = false, adminEmails = [] }) {
   const isAdmin = adminEmails.includes(user?.email);
@@ -188,6 +190,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
               ["tank", "🏦", "Holding Tank"],
               ["credit", "⭐", "Credit Score"],
               ["savings", "💰", "Savings"],
+              ["workbook", "📓", "Workbook"],
               ...(isAdmin && !isDemo ? [["admin", "🔐", "Admin"]] : []),
             ].map(([id, icon, label]) => (
               <button key={id} onClick={() => setActiveTab(id)} style={{ padding: "8px 16px", border: "none", borderBottom: activeTab === id ? "2px solid " + t.gold : "2px solid transparent", background: "transparent", color: activeTab === id ? t.gold : t.textMuted, fontSize: 13, fontWeight: activeTab === id ? 600 : 400, cursor: "pointer", transition: "all 0.2s", fontFamily: "'DM Sans',sans-serif", whiteSpace: "nowrap" }}>{icon} {label}</button>
@@ -625,8 +628,12 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
         )}
 
         {/* ADMIN TAB */}
+        {activeTab === "workbook" && (
+          <WorkbookPages userId={user?.id} />
+        )}
+
         {activeTab === "admin" && isAdmin && !isDemo && (
-          <AdminTab theme={theme} t={t} />
+          <AdminTab theme={theme} t={t} user={user} />
         )}
 
         {/* FOOTER */}
@@ -652,21 +659,29 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
 }
 
 // ─── ADMIN TAB COMPONENT ─────────────────────────────────────────────────────
-function AdminTab({ theme, t }) {
-  const [sessionNotes, setSessionNotes] = useState(() => {
-    try { return localStorage.getItem("cck_session_notes") || ""; } catch { return ""; }
-  });
+function AdminTab({ theme, t, user }) {
+  const [sessionNotes, setSessionNotes] = useState("");
   const [notesSaved, setNotesSaved] = useState(false);
+  const [notesLoading, setNotesLoading] = useState(true);
   const [participants, setParticipants] = useState([
-    { name: "Alexis M.", email: "alexis@example.com", joined: "Mar 7", status: "active", notes: "" },
-    { name: "DeShawn R.", email: "deshawn@example.com", joined: "Mar 7", status: "active", notes: "" },
-    { name: "Tamara J.", email: "tamara@example.com", joined: "Mar 7", status: "active", notes: "" },
-    { name: "Marcus W.", email: "marcus@example.com", joined: "Mar 7", status: "active", notes: "" },
-    { name: "Priya S.", email: "priya@example.com", joined: "Mar 7", status: "active", notes: "" },
+    { name: "Jessica Stewart",      email: "",  joined: "Mar 7, 2026", status: "founding", notes: "" },
+    { name: "Desiree Hart",         email: "",  joined: "Mar 7, 2026", status: "founding", notes: "" },
+    { name: "Elizabeth (Betsy) Hankel", email: "", joined: "Mar 7, 2026", status: "founding", notes: "" },
+    { name: "Scott Hoglund",        email: "",  joined: "pending",     status: "pending",  notes: "" },
   ]);
 
-  const saveNotes = () => {
-    try { localStorage.setItem("cck_session_notes", sessionNotes); } catch {}
+  // Load session notes from Supabase on mount
+  useEffect(() => {
+    supabase.from("admin_notes").select("notes").eq("key", "session_notes").single()
+      .then(({ data }) => {
+        if (data?.notes) setSessionNotes(data.notes);
+        setNotesLoading(false);
+      })
+      .catch(() => setNotesLoading(false));
+  }, []);
+
+  const saveNotes = async () => {
+    await supabase.from("admin_notes").upsert({ key: "session_notes", notes: sessionNotes, updated_at: new Date().toISOString() });
     setNotesSaved(true);
     setTimeout(() => setNotesSaved(false), 2000);
   };
@@ -675,16 +690,16 @@ function AdminTab({ theme, t }) {
     {
       title: "How to Age Your Money (Holdback Method)",
       channel: "Nick True — MappedOutMoney",
-      search: "Nick True MappedOutMoney How to Age Your Money YNAB",
+      url: "https://www.youtube.com/watch?v=fxh6BI7JjjE",
       duration: "~8 min",
-      note: "Core concept for the Holding Tank tab. Shows how living on last month's income breaks the paycheck-to-paycheck cycle.",
+      note: "Core concept for the Holding Tank. Shows how living on last month's income breaks the paycheck-to-paycheck cycle.",
     },
     {
-      title: "Why You NEED an Emergency Fund",
+      title: "Why You NEED an Emergency Fund (Holding Tank)",
       channel: "Two Cents — PBS",
-      search: "Two Cents Why You NEED an Emergency Fund PBS",
+      url: "https://www.youtube.com/watch?v=ajqpkIMFgZo",
       duration: "~5 min",
-      note: "Pairs with the $20K Freedom Fund. Vanguard research: $2,000 saved = 21% boost in financial well-being. $20K is where compound interest starts working FOR you.",
+      note: "⚠️ Remind Kari: fast-forward past the opening segment before showing in class.",
     },
   ];
 
@@ -732,11 +747,11 @@ function AdminTab({ theme, t }) {
                 <div style={{ fontSize: 12, color: t.textMuted, lineHeight: 1.5, maxWidth: 560 }}>{v.note}</div>
               </div>
               <a
-                href={"https://www.youtube.com/results?search_query=" + encodeURIComponent(v.search)}
+                href={v.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ padding: "6px 16px", borderRadius: 8, border: "1px solid #FF0000", background: "#FF000011", color: "#FF6B6B", fontSize: 12, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap", display: "inline-block" }}
-              >▶ Search YouTube</a>
+              >▶ Watch</a>
             </div>
           </div>
         ))}
@@ -776,7 +791,12 @@ function AdminTab({ theme, t }) {
                   <td style={{ padding: "10px", fontSize: 12, color: t.textMuted }}>{p.email}</td>
                   <td style={{ padding: "10px", fontSize: 12, color: t.textMuted, whiteSpace: "nowrap" }}>{p.joined}</td>
                   <td style={{ padding: "10px" }}>
-                    <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: "#22C55E22", color: "#22C55E", border: "1px solid #22C55E44" }}>{p.status}</span>
+                    <span style={{
+                      padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
+                      background: p.status === "founding" ? "#C9A84C22" : p.status === "pending" ? "#88888822" : "#22C55E22",
+                      color: p.status === "founding" ? "#C9A84C" : p.status === "pending" ? "#888888" : "#22C55E",
+                      border: "1px solid " + (p.status === "founding" ? "#C9A84C44" : p.status === "pending" ? "#88888844" : "#22C55E44"),
+                    }}>{p.status === "founding" ? "🪙 founding" : p.status === "pending" ? "⏳ pending" : p.status}</span>
                   </td>
                   <td style={{ padding: "10px" }}>
                     <input
@@ -792,7 +812,46 @@ function AdminTab({ theme, t }) {
           </table>
         </div>
         <div style={{ marginTop: 12, fontSize: 11, color: t.textFaint, fontStyle: "italic" }}>
-          Participant roster — update as cohort grows. Notes save in your browser.
+          Notes save to the cloud — available from any device.
+        </div>
+      </div>
+
+      {/* ── SESSION PLAN ── */}
+      <div style={cardStyle}>
+        <h3 style={headingStyle}>📅 13-Week Session Plan</h3>
+        <div style={{ fontSize: 12, color: t.textMuted, marginBottom: 16, fontStyle: "italic" }}>
+          Your roadmap. Edit sessions 7–12 when Monet &amp; Finn fill in the rest.
+        </div>
+        {[
+          { n: 1,  plan: "Share the tech and the workbook. Discuss the concepts and share story. Show the videos. ROADMAP and MASLOW." },
+          { n: 2,  plan: "Workbook pgs 13, 55." },
+          { n: 3,  plan: "Workbook pgs 23, 30, 72. TERMS, RESOURCES, KARI'S ENCOURAGEMENT." },
+          { n: 4,  plan: "Workbook pgs 27, 29, 51 — talk about other reflections." },
+          { n: 5,  plan: "REVIEW WHAT SHOULD BE DONE — workbook pgs 58, 60, 67." },
+          { n: 6,  plan: "Ask Monet/Finn for the rest of this session plan." },
+          { n: 7,  plan: "" },
+          { n: 8,  plan: "" },
+          { n: 9,  plan: "" },
+          { n: 10, plan: "" },
+          { n: 11, plan: "" },
+          { n: 12, plan: "" },
+          { n: 13, plan: "Sign Certificates and Send. Collect Testimonials. Plan follow-up / Future Meets." },
+        ].map((s) => (
+          <div key={s.n} style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "10px 0", borderBottom: s.n < 13 ? "1px solid " + t.cardBorder : "none" }}>
+            <div style={{ minWidth: 80, fontWeight: 700, fontSize: 13, color: t.gold, fontFamily: "'DM Mono',monospace", paddingTop: 6 }}>
+              Week {s.n}
+            </div>
+            <input
+              defaultValue={s.plan}
+              placeholder={s.n >= 7 && s.n <= 12 ? "Ask Monet / Finn..." : ""}
+              style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid " + t.cardBorder, background: t.rowHover, color: t.text, fontSize: 13, fontFamily: "'DM Sans',sans-serif", outline: "none" }}
+              onFocus={e => e.target.style.borderColor = t.gold}
+              onBlur={e => e.target.style.borderColor = t.cardBorder}
+            />
+          </div>
+        ))}
+        <div style={{ marginTop: 12, fontSize: 11, color: t.textFaint, fontStyle: "italic" }}>
+          These edits are local for now — session notes below save to the cloud.
         </div>
       </div>
 

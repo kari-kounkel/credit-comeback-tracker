@@ -4,59 +4,7 @@ import { THEMES, THEME_KEY } from "./constants";
 import { makeDefault, loadLocal, saveLocal, loadTheme, hasLocalData, loadFromCloud, saveToCloud, migrateData } from "./helpers";
 import AuthScreen from "./components/AuthScreen";
 import TrackerApp from "./components/TrackerApp";
-
-// ─── DEMO DATA ────────────────────────────────────────────────────────────────
-// Pre-seeded fake participant data for live class demos
-const makeDemoData = () => {
-  const bills = Array(12).fill(null).map(() => []);
-  const income = Array(12).fill(null).map(() => []);
-  const savings = Array(12).fill(0);
-  const creditScores = Array(12).fill(0);
-
-  // Fill March (index 2) with demo data
-  bills[2] = [
-    { name: "Rent", category: "Housing", budgeted: 950, actual: 950, dueDay: 1, status: "paid" },
-    { name: "Electric", category: "Utilities", budgeted: 85, actual: 91, dueDay: 5, status: "paid" },
-    { name: "Water", category: "Utilities", budgeted: 40, actual: 40, dueDay: 5, status: "paid" },
-    { name: "Internet", category: "Utilities", budgeted: 60, actual: 60, dueDay: 10, status: "paid" },
-    { name: "Car Payment", category: "Transportation", budgeted: 280, actual: 280, dueDay: 12, status: "paid" },
-    { name: "Car Insurance", category: "Transportation", budgeted: 110, actual: 110, dueDay: 12, status: "paid" },
-    { name: "Phone", category: "Personal", budgeted: 65, actual: 65, dueDay: 15, status: "paid" },
-    { name: "Credit Card (Cap One)", category: "Debt", budgeted: 75, actual: 75, dueDay: 18, status: "paid" },
-    { name: "Credit Card (Discover)", category: "Debt", budgeted: 50, actual: 0, dueDay: 22, status: "unpaid" },
-    { name: "Groceries", category: "Food", budgeted: 300, actual: 247, dueDay: 28, status: "paid" },
-    { name: "Gas", category: "Transportation", budgeted: 80, actual: 63, dueDay: 28, status: "paid" },
-    { name: "Netflix", category: "Personal", budgeted: 18, actual: 18, dueDay: 28, status: "paid" },
-  ];
-  income[2] = [
-    { name: "Job — Warehouse", type: "Employment", amount: 2100 },
-    { name: "Side Gig — DoorDash", type: "Side Income", amount: 380 },
-  ];
-  savings[2] = 130;
-
-  // Fill Feb with partial data
-  bills[1] = bills[2].map(b => ({ ...b, actual: b.budgeted, status: "paid" }));
-  income[1] = [{ name: "Job — Warehouse", type: "Employment", amount: 2100 }];
-  savings[1] = 85;
-
-  // Scores showing improvement arc
-  creditScores[0] = 541;
-  creditScores[1] = 548;
-  creditScores[2] = 562;
-
-  const holdingTank = { balance: 2480, note: "Last month's income held for this month's bills — the Holdback method. This is not spending money. This is the plan." };
-
-  return { bills, income, savings, creditScores, holdingTank };
-};
-
-const DEMO_USER = {
-  id: "demo-user-0000",
-  email: "demo@class.local",
-  isDemo: true,
-};
-
-// ─── ADMIN EMAILS ─────────────────────────────────────────────────────────────
-export const ADMIN_EMAILS = ["kari@karikounkel.com", "kari@caresmn.com"];
+import CCKTutorial from "./components/CCKTutorial";
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -64,7 +12,7 @@ export default function App() {
   const [trackerData, setTrackerData] = useState(null);
   const [authError, setAuthError] = useState(null);
   const [theme, setTheme] = useState(loadTheme);
-  const [isDemo, setIsDemo] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
   const initDone = useRef(false);
 
   useEffect(() => {
@@ -102,6 +50,12 @@ export default function App() {
     setLoading(true);
     setAuthError(null);
 
+    // Show tutorial if this user hasn't seen it yet
+    const tutorialKey = `tutorial_seen_${authUser.id}`;
+    if (!localStorage.getItem(tutorialKey)) {
+      setShowTutorial(true);
+    }
+
     try {
       let cloudData = await loadFromCloud(authUser.id);
       const localData = loadLocal();
@@ -130,29 +84,16 @@ export default function App() {
   };
 
   const handleSave = useCallback(async (data) => {
-    if (isDemo) return; // demo mode — never touches real data
     if (user) {
       try { await saveToCloud(user.id, data); } catch (e) { console.error("Save error:", e); }
     }
-  }, [user, isDemo]);
+  }, [user]);
 
   const handleLogout = async () => {
-    if (isDemo) {
-      setIsDemo(false);
-      setUser(null);
-      setTrackerData(null);
-      return;
-    }
     await supabase.auth.signOut();
     setUser(null);
     setTrackerData(null);
     setAuthError(null);
-  };
-
-  const handleDemoMode = () => {
-    setIsDemo(true);
-    setUser(DEMO_USER);
-    setTrackerData(makeDemoData());
   };
 
   const updateTheme = (newTheme) => {
@@ -175,53 +116,21 @@ export default function App() {
     );
   }
 
-  // Not logged in — show auth screen with Demo Mode button injected below it
+  // Not logged in
   if (!user || !trackerData) {
-    return (
-      <div style={{ position: "relative" }}>
-        <AuthScreen onAuth={async (u) => await handleUserReady(u)} theme={theme} setTheme={updateTheme} />
-        {/* Demo Mode button — floats at bottom of screen */}
-        <div style={{
-          position: "fixed", bottom: 0, left: 0, right: 0,
-          background: "rgba(27,58,92,0.97)",
-          borderTop: "1px solid #C9A84C44",
-          padding: "12px 20px",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 16,
-          fontFamily: "'DM Sans',sans-serif", zIndex: 999
-        }}>
-          <span style={{ fontSize: 12, color: "#C9A84C99", letterSpacing: 1, textTransform: "uppercase" }}>
-            🎓 Teaching today?
-          </span>
-          <button
-            onClick={handleDemoMode}
-            style={{
-              padding: "8px 24px", borderRadius: 8,
-              border: "1px solid #C9A84C",
-              background: "#C9A84C22",
-              color: "#C9A84C",
-              fontSize: 13, fontWeight: 700, cursor: "pointer",
-              fontFamily: "'DM Sans',sans-serif",
-              letterSpacing: 0.5,
-            }}
-          >
-            Enter Demo Mode
-          </button>
-        </div>
-      </div>
-    );
+    return <AuthScreen onAuth={async (u) => await handleUserReady(u)} theme={theme} setTheme={updateTheme} />;
   }
 
-  // Logged in (real or demo)
+  // Logged in
   return (
-    <TrackerApp
-      user={user}
-      initialData={trackerData}
-      onSave={handleSave}
-      onLogout={handleLogout}
-      theme={theme}
-      setTheme={updateTheme}
-      isDemo={isDemo}
-      adminEmails={ADMIN_EMAILS}
-    />
+    <>
+      {showTutorial && (
+        <CCKTutorial onComplete={() => {
+          localStorage.setItem(`tutorial_seen_${user.id}`, "true");
+          setShowTutorial(false);
+        }} />
+      )}
+      <TrackerApp user={user} initialData={trackerData} onSave={handleSave} onLogout={handleLogout} theme={theme} setTheme={updateTheme} />
+    </>
   );
 }

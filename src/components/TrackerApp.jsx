@@ -4,6 +4,7 @@ import { fmt, groupByCategory, saveLocal } from "../helpers";
 import { NumCell, DayCell, ProgressBar, SidebarNote } from "./SharedUI";
 import AddExpenseModal from "./AddExpenseModal";
 import AddIncomeModal, { INCOME_EMOJIS } from "./AddIncomeModal";
+import WorkbookPages from "./WorkbookPages";
 
 export default function TrackerApp({ user, initialData, onSave, onLogout, theme, setTheme }) {
   const t = THEMES[theme] || THEMES.dark;
@@ -154,7 +155,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
 
           {/* Tabs */}
           <div style={{ display: "flex", gap: 4, marginTop: 12, borderBottom: "1px solid " + t.cardBorder, overflowX: "auto" }}>
-            {[["dashboard", "📊", "Dashboard"], ["bills", "📋", "Bills & Budget"], ["tank", "🏦", "Holding Tank"], ["credit", "⭐", "Credit Score"], ["savings", "💰", "Savings"]].map(([id, icon, label]) => (
+            {[["dashboard", "📊", "Dashboard"], ["bills", "📋", "Bills & Budget"], ["tank", "🏦", "Holding Tank"], ["credit", "⭐", "Credit Score"], ["savings", "💰", "Savings"], ["workbook", "📓", "Workbook"]].map(([id, icon, label]) => (
               <button key={id} onClick={() => setActiveTab(id)} style={{ padding: "8px 16px", border: "none", borderBottom: activeTab === id ? "2px solid " + t.gold : "2px solid transparent", background: "transparent", color: activeTab === id ? t.gold : t.textMuted, fontSize: 13, fontWeight: activeTab === id ? 600 : 400, cursor: "pointer", transition: "all 0.2s", fontFamily: "'DM Sans',sans-serif", whiteSpace: "nowrap" }}>{icon} {label}</button>
             ))}
           </div>
@@ -587,6 +588,11 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
 
             <SidebarNote theme={theme}>Savings doesn't start with a windfall. It starts with the $13 you didn't spend at the drive-through. It shows up in the $47 you didn't spend on things that don't love you back. Enter what you saved each month. Watch the green bar move. That bar is your future arguing with your past — and winning.</SidebarNote>
           </>
+        )}
+
+        {/* WORKBOOK TAB */}
+        {activeTab === "workbook" && (
+          <WorkbookPages userId={user.id} theme={theme} />
         )}
 
         {/* FOOTER */}

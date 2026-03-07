@@ -4,6 +4,7 @@ import { THEMES, THEME_KEY } from "./constants";
 import { makeDefault, loadLocal, saveLocal, loadTheme, hasLocalData, loadFromCloud, saveToCloud, migrateData } from "./helpers";
 import AuthScreen from "./components/AuthScreen";
 import TrackerApp from "./components/TrackerApp";
+import CCKTutorial from "./components/CCKTutorial";
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -11,6 +12,7 @@ export default function App() {
   const [trackerData, setTrackerData] = useState(null);
   const [authError, setAuthError] = useState(null);
   const [theme, setTheme] = useState(loadTheme);
+  const [showTutorial, setShowTutorial] = useState(false);
   const initDone = useRef(false);
 
   useEffect(() => {
@@ -65,6 +67,10 @@ export default function App() {
 
       setTrackerData(cloudData);
       saveLocal(cloudData);
+
+      // Show tutorial on first login (check localStorage flag)
+      const tutorialSeen = localStorage.getItem(`tutorial_seen_${authUser.id}`);
+      if (!tutorialSeen) setShowTutorial(true);
     } catch (e) {
       console.error("handleUserReady error:", e);
       const fallback = loadLocal() || makeDefault();
@@ -114,5 +120,15 @@ export default function App() {
   }
 
   // Logged in
-  return <TrackerApp user={user} initialData={trackerData} onSave={handleSave} onLogout={handleLogout} theme={theme} setTheme={updateTheme} />;
+  return (
+    <>
+      {showTutorial && (
+        <CCKTutorial onComplete={() => {
+          localStorage.setItem(`tutorial_seen_${user.id}`, "true");
+          setShowTutorial(false);
+        }} />
+      )}
+      <TrackerApp user={user} initialData={trackerData} onSave={handleSave} onLogout={handleLogout} theme={theme} setTheme={updateTheme} />
+    </>
+  );
 }

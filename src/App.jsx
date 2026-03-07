@@ -7,16 +7,18 @@ import TrackerApp from "./components/TrackerApp";
 import CCKTutorial from "./components/CCKTutorial";
 
 export default function App() {
-  const [user, setUser] = useState(null);  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [trackerData, setTrackerData] = useState(null);
   const [authError, setAuthError] = useState(null);
   const [theme, setTheme] = useState(loadTheme);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [isDemo, setIsDemo] = useState(false);
   const initDone = useRef(false);
 
   useEffect(() => {
-    // Safety timeout — never stuck on loading more than 8 seconds
-    const timeout = setTimeout(() => setLoading(false), 8000);
+    // Safety timeout — never stuck on loading more than 4 seconds
+    const timeout = setTimeout(() => setLoading(false), 4000);
 
     const init = async () => {
       try {
@@ -82,6 +84,29 @@ export default function App() {
     setLoading(false);
   };
 
+  const handleDemo = () => {
+    const demoData = makeDefault();
+    demoData.income[2] = [
+      { name: "Day Job — Wages", type: "Employment", amount: 2800 },
+      { name: "Side Hustle", type: "Self-Employment", amount: 420 },
+    ];
+    demoData.bills[2] = [
+      { name: "Rent", category: "Housing", budgeted: 950, actual: 950, dueDay: 1, status: "paid" },
+      { name: "Electric", category: "Utilities", budgeted: 85, actual: 78, dueDay: 10, status: "paid" },
+      { name: "Phone", category: "Utilities", budgeted: 55, actual: 55, dueDay: 15, status: "paid" },
+      { name: "Groceries", category: "Food", budgeted: 400, actual: 312, dueDay: null, status: "partial" },
+      { name: "Car Insurance", category: "Transportation", budgeted: 130, actual: 130, dueDay: 22, status: "paid" },
+      { name: "Capital One CC", category: "Debt", budgeted: 75, actual: 0, dueDay: 28, status: "unpaid" },
+      { name: "Medical Bill", category: "Health", budgeted: 50, actual: 0, dueDay: 30, status: "unpaid" },
+    ];
+    demoData.creditScores[2] = 594;
+    demoData.savings[2] = 200;
+    demoData.savings[0] = 150;
+    demoData.savings[1] = 175;
+    setTrackerData(demoData);
+    setIsDemo(true);
+  };
+
   const handleSave = useCallback(async (data) => {
     if (user) {
       try { await saveToCloud(user.id, data); } catch (e) { console.error("Save error:", e); }
@@ -119,18 +144,40 @@ export default function App() {
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
         <div style={{ textAlign: "center" }}>
           <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, color: t.gold, marginBottom: 12 }}>The Credit Comeback Tracker</div>
-          <div style={{ color: t.textMuted, fontSize: 14 }}>Loading your data...</div>
+          <div style={{ color: t.textMuted, fontSize: 14, marginBottom: 20 }}>Loading your data...</div>
+          <button onClick={() => setLoading(false)} style={{ padding: "10px 24px", borderRadius: 10, border: "1px solid " + t.cardBorder, background: t.cardBg, color: t.textMuted, fontSize: 13, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+            Taking too long? Tap here to continue →
+          </button>
         </div>
       </div>
     );
   }
 
   // Not logged in
-  if (!user || !trackerData) {
+  if (!user && !isDemo) {
     return (
       <>
         {fontLink}
-        <AuthScreen onAuth={async (u) => await handleUserReady(u)} theme={theme} setTheme={updateTheme} />
+        <AuthScreen onAuth={async (u) => await handleUserReady(u)} theme={theme} setTheme={updateTheme} onDemo={handleDemo} />
+      </>
+    );
+  }
+
+  // Demo — has data but no user
+  if (isDemo && !user && trackerData) {
+    return (
+      <>
+        {fontLink}
+        <TrackerApp
+          user={{ email: "demo@demo.com" }}
+          initialData={trackerData}
+          onSave={() => {}}
+          onLogout={() => { setIsDemo(false); setTrackerData(null); }}
+          theme={theme}
+          setTheme={updateTheme}
+          isDemo={true}
+          onReplayTutorial={() => setShowTutorial(true)}
+        />
       </>
     );
   }
@@ -145,7 +192,7 @@ export default function App() {
           setShowTutorial(false);
         }} />
       )}
-      <TrackerApp user={user} initialData={trackerData} onSave={handleSave} onLogout={handleLogout} theme={theme} setTheme={updateTheme} />
+      <TrackerApp user={user} initialData={trackerData} onSave={handleSave} onLogout={handleLogout} theme={theme} setTheme={updateTheme} onReplayTutorial={() => setShowTutorial(true)} />
     </>
   );
 }

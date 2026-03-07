@@ -4,9 +4,9 @@ import { fmt, groupByCategory, saveLocal } from "../helpers";
 import { NumCell, DayCell, ProgressBar, SidebarNote } from "./SharedUI";
 import AddExpenseModal from "./AddExpenseModal";
 import AddIncomeModal, { INCOME_EMOJIS } from "./AddIncomeModal";
-import WorkbookPages from "./WorkbookPages";
 
-export default function TrackerApp({ user, initialData, onSave, onLogout, theme, setTheme }) {
+export default function TrackerApp({ user, initialData, onSave, onLogout, theme, setTheme, isDemo = false, adminEmails = [] }) {
+  const isAdmin = adminEmails.includes(user?.email);
   const t = THEMES[theme] || THEMES.dark;
   const [state, setState] = useState(initialData);
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -120,6 +120,33 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
     <div style={{ minHeight: "100vh", background: t.bg, fontFamily: "'DM Sans',sans-serif", color: t.text }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
 
+      {/* DEMO MODE BANNER */}
+      {isDemo && (
+        <div style={{
+          background: "#C9A84C",
+          padding: "8px 20px",
+          textAlign: "center",
+          fontSize: 13,
+          fontWeight: 700,
+          color: "#1B3A5C",
+          letterSpacing: 0.5,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 12,
+        }}>
+          <span>🎓 DEMO MODE — Nothing here is saved. Click freely. Show off.</span>
+          <button
+            onClick={onLogout}
+            style={{
+              padding: "3px 14px", borderRadius: 6, border: "1px solid #1B3A5C44",
+              background: "#1B3A5C22", color: "#1B3A5C", fontSize: 11,
+              fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif"
+            }}
+          >✕ Exit Demo</button>
+        </div>
+      )}
+
       {/* SYNC BAR */}
       <div style={{ background: syncStatus === "saving" ? t.gold + "22" : syncStatus === "error" ? t.red + "22" : t.green + "14", padding: "4px 20px", textAlign: "center", fontSize: 11, color: syncStatus === "saving" ? t.gold : syncStatus === "error" ? t.red : t.green, borderBottom: "1px solid " + t.cardBorder, transition: "all 0.3s" }}>
         {syncStatus === "saving" ? "☁️ Saving..." : syncStatus === "error" ? "⚠️ Sync error — data saved locally" : "☁️ Synced to your account"}
@@ -155,7 +182,14 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
 
           {/* Tabs */}
           <div style={{ display: "flex", gap: 4, marginTop: 12, borderBottom: "1px solid " + t.cardBorder, overflowX: "auto" }}>
-            {[["dashboard", "📊", "Dashboard"], ["bills", "📋", "Bills & Budget"], ["tank", "🏦", "Holding Tank"], ["credit", "⭐", "Credit Score"], ["savings", "💰", "Savings"], ["workbook", "📓", "Workbook"]].map(([id, icon, label]) => (
+            {[
+              ["dashboard", "📊", "Dashboard"],
+              ["bills", "📋", "Bills & Budget"],
+              ["tank", "🏦", "Holding Tank"],
+              ["credit", "⭐", "Credit Score"],
+              ["savings", "💰", "Savings"],
+              ...(isAdmin && !isDemo ? [["admin", "🔐", "Admin"]] : []),
+            ].map(([id, icon, label]) => (
               <button key={id} onClick={() => setActiveTab(id)} style={{ padding: "8px 16px", border: "none", borderBottom: activeTab === id ? "2px solid " + t.gold : "2px solid transparent", background: "transparent", color: activeTab === id ? t.gold : t.textMuted, fontSize: 13, fontWeight: activeTab === id ? 600 : 400, cursor: "pointer", transition: "all 0.2s", fontFamily: "'DM Sans',sans-serif", whiteSpace: "nowrap" }}>{icon} {label}</button>
             ))}
           </div>
@@ -590,9 +624,9 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
           </>
         )}
 
-        {/* WORKBOOK TAB */}
-        {activeTab === "workbook" && (
-          <WorkbookPages userId={user.id} theme={theme} />
+        {/* ADMIN TAB */}
+        {activeTab === "admin" && isAdmin && !isDemo && (
+          <AdminTab theme={theme} t={t} />
         )}
 
         {/* FOOTER */}
@@ -613,6 +647,179 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
 
       {showAddExpense && <AddExpenseModal onClose={() => setShowAddExpense(false)} onAdd={addExpense} theme={theme} />}
       {showAddIncome && <AddIncomeModal onClose={() => setShowAddIncome(false)} onAdd={addIncome} theme={theme} />}
+    </div>
+  );
+}
+
+// ─── ADMIN TAB COMPONENT ─────────────────────────────────────────────────────
+function AdminTab({ theme, t }) {
+  const [sessionNotes, setSessionNotes] = useState(() => {
+    try { return localStorage.getItem("cck_session_notes") || ""; } catch { return ""; }
+  });
+  const [notesSaved, setNotesSaved] = useState(false);
+  const [participants, setParticipants] = useState([
+    { name: "Alexis M.", email: "alexis@example.com", joined: "Mar 7", status: "active", notes: "" },
+    { name: "DeShawn R.", email: "deshawn@example.com", joined: "Mar 7", status: "active", notes: "" },
+    { name: "Tamara J.", email: "tamara@example.com", joined: "Mar 7", status: "active", notes: "" },
+    { name: "Marcus W.", email: "marcus@example.com", joined: "Mar 7", status: "active", notes: "" },
+    { name: "Priya S.", email: "priya@example.com", joined: "Mar 7", status: "active", notes: "" },
+  ]);
+
+  const saveNotes = () => {
+    try { localStorage.setItem("cck_session_notes", sessionNotes); } catch {}
+    setNotesSaved(true);
+    setTimeout(() => setNotesSaved(false), 2000);
+  };
+
+  const videos = [
+    {
+      title: "How to Age Your Money (Holdback Method)",
+      channel: "Nick True — MappedOutMoney",
+      search: "Nick True MappedOutMoney How to Age Your Money YNAB",
+      duration: "~8 min",
+      note: "Core concept for the Holding Tank tab. Shows how living on last month's income breaks the paycheck-to-paycheck cycle.",
+    },
+    {
+      title: "Why You NEED an Emergency Fund",
+      channel: "Two Cents — PBS",
+      search: "Two Cents Why You NEED an Emergency Fund PBS",
+      duration: "~5 min",
+      note: "Pairs with the $20K Freedom Fund. Vanguard research: $2,000 saved = 21% boost in financial well-being. $20K is where compound interest starts working FOR you.",
+    },
+  ];
+
+  const resources = [
+    { label: "Credit Comeback Kit (PDF)", url: "https://credit.karikounkel.com", icon: "📘" },
+    { label: "AnnualCreditReport.com", url: "https://www.annualcreditreport.com", icon: "📋" },
+    { label: "Experian", url: "https://www.experian.com", icon: "📊" },
+    { label: "TransUnion", url: "https://www.transunion.com", icon: "📊" },
+    { label: "Equifax", url: "https://www.equifax.com", icon: "📊" },
+    { label: "CFPB Dispute Letter Templates", url: "https://www.consumerfinance.gov/consumer-tools/credit-reports-and-scores/", icon: "✉️" },
+  ];
+
+  const cardStyle = {
+    background: t.cardBg,
+    border: "1px solid " + t.cardBorder,
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+  };
+
+  const headingStyle = {
+    fontFamily: "'Playfair Display',serif",
+    color: t.gold,
+    fontSize: 18,
+    fontWeight: 700,
+    margin: "0 0 16px",
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+        <h2 style={{ ...headingStyle, margin: 0, fontSize: 22 }}>🔐 Admin Center</h2>
+        <span style={{ fontSize: 11, color: t.textMuted, padding: "3px 10px", borderRadius: 20, border: "1px solid " + t.cardBorder, background: t.rowHover }}>Visible only to you</span>
+      </div>
+
+      {/* ── CLASS VIDEOS ── */}
+      <div style={cardStyle}>
+        <h3 style={headingStyle}>📹 Class Videos</h3>
+        {videos.map((v, i) => (
+          <div key={i} style={{ padding: "14px 0", borderBottom: i < videos.length - 1 ? "1px solid " + t.cardBorder : "none" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: t.text, marginBottom: 2 }}>{v.title}</div>
+                <div style={{ fontSize: 11, color: t.textMuted, marginBottom: 6 }}>{v.channel} · {v.duration}</div>
+                <div style={{ fontSize: 12, color: t.textMuted, lineHeight: 1.5, maxWidth: 560 }}>{v.note}</div>
+              </div>
+              <a
+                href={"https://www.youtube.com/results?search_query=" + encodeURIComponent(v.search)}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ padding: "6px 16px", borderRadius: 8, border: "1px solid #FF0000", background: "#FF000011", color: "#FF6B6B", fontSize: 12, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap", display: "inline-block" }}
+              >▶ Search YouTube</a>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── RESOURCES ── */}
+      <div style={cardStyle}>
+        <h3 style={headingStyle}>🔗 Class Resources</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
+          {resources.map((r, i) => (
+            <a key={i} href={r.url} target="_blank" rel="noopener noreferrer"
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 8, border: "1px solid " + t.cardBorder, background: t.rowHover, textDecoration: "none", color: t.text, fontSize: 13, transition: "border-color 0.2s" }}
+            >
+              <span style={{ fontSize: 18 }}>{r.icon}</span>
+              <span>{r.label}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      {/* ── PARTICIPANTS ── */}
+      <div style={cardStyle}>
+        <h3 style={headingStyle}>👥 Cohort 1 — March 2026</h3>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                {["Name", "Email", "Joined", "Status", "Notes"].map(h => (
+                  <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontSize: 10, color: t.textMuted, textTransform: "uppercase", letterSpacing: 1, borderBottom: "1px solid " + t.cardBorder, fontWeight: 600 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {participants.map((p, i) => (
+                <tr key={i} style={{ borderBottom: "1px solid " + t.cardBorder }}>
+                  <td style={{ padding: "10px", fontSize: 13, color: t.text, fontWeight: 600 }}>{p.name}</td>
+                  <td style={{ padding: "10px", fontSize: 12, color: t.textMuted }}>{p.email}</td>
+                  <td style={{ padding: "10px", fontSize: 12, color: t.textMuted, whiteSpace: "nowrap" }}>{p.joined}</td>
+                  <td style={{ padding: "10px" }}>
+                    <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: "#22C55E22", color: "#22C55E", border: "1px solid #22C55E44" }}>{p.status}</span>
+                  </td>
+                  <td style={{ padding: "10px" }}>
+                    <input
+                      value={p.notes}
+                      onChange={e => setParticipants(prev => prev.map((x, j) => j === i ? { ...x, notes: e.target.value } : x))}
+                      placeholder="Add note..."
+                      style={{ width: "100%", padding: "4px 8px", borderRadius: 6, border: "1px solid " + t.cardBorder, background: t.rowHover, color: t.text, fontSize: 12, fontFamily: "'DM Sans',sans-serif", outline: "none" }}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div style={{ marginTop: 12, fontSize: 11, color: t.textFaint, fontStyle: "italic" }}>
+          Participant roster — update as cohort grows. Notes save in your browser.
+        </div>
+      </div>
+
+      {/* ── SESSION NOTES ── */}
+      <div style={cardStyle}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <h3 style={{ ...headingStyle, margin: 0 }}>📝 Session Notes</h3>
+          <button
+            onClick={saveNotes}
+            style={{ padding: "6px 18px", borderRadius: 8, border: "none", background: notesSaved ? "#22C55E" : "linear-gradient(135deg," + t.gold + "," + t.goldDark + ")", color: notesSaved ? "#fff" : t.btnText, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", transition: "all 0.3s" }}
+          >{notesSaved ? "✓ Saved" : "Save Notes"}</button>
+        </div>
+        <textarea
+          value={sessionNotes}
+          onChange={e => setSessionNotes(e.target.value)}
+          placeholder={"Session 1 — March 7, 2026\n\nTopics covered:\n- Pulled credit reports\n- Reviewed CARES Framework\n- Set up accounts\n\nParticipant wins:\n\nNext session prep:\n"}
+          style={{
+            width: "100%", minHeight: 240, padding: "12px 14px",
+            borderRadius: 8, border: "1px solid " + t.cardBorder,
+            background: t.rowHover, color: t.text,
+            fontSize: 13, fontFamily: "'DM Mono',monospace",
+            lineHeight: 1.7, resize: "vertical", outline: "none",
+            boxSizing: "border-box",
+          }}
+        />
+        <div style={{ marginTop: 8, fontSize: 11, color: t.textFaint, fontStyle: "italic" }}>Saves to your browser locally. Copy to a doc for permanent records.</div>
+      </div>
     </div>
   );
 }

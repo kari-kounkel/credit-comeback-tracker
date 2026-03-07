@@ -192,7 +192,7 @@ export default function App() {
           setShowTutorial(false);
         }} />
       )}
-      <TrackerApp user={user} initialData={trackerData} onSave={handleSave} onLogout={handleLogout} theme={theme} setTheme={updateTheme} onReplayTutorial={() => setShowTutorial(true)} />
+      <TrackerApp user={user} initialData={trackerData} onSave={handleSave} onLogout={handleLogout} theme={theme} setTheme={updateTheme} onReplayTutorial={() => setShowTutorial(true)} adminEmails={["kari@karikounkel.com", "kari@caresmn.com"]} />
     </>
   );
 }

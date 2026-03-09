@@ -688,18 +688,18 @@ function AdminTab({ theme, t, user }) {
 
   const videos = [
     {
-      title: "How to Age Your Money (Holdback Method)",
-      channel: "Nick True — MappedOutMoney",
+      title: "How to Save $20,000 — The Framework That Actually Works",
+      channel: "Nischa",
       url: "https://www.youtube.com/watch?v=fxh6BI7JjjE",
-      duration: "~8 min",
-      note: "Core concept for the Holding Tank. Shows how living on last month's income breaks the paycheck-to-paycheck cycle.",
+      duration: "~10 min",
+      note: "The $20K threshold concept — why this number shifts your brain from survival mode to growth mode. Core to the Freedom Fund goal.",
     },
     {
-      title: "Why You NEED an Emergency Fund (Holding Tank)",
-      channel: "Two Cents — PBS",
+      title: "How to Age Your Money (Holdback Method)",
+      channel: "Nick True — MappedOutMoney",
       url: "https://www.youtube.com/watch?v=ajqpkIMFgZo",
-      duration: "~5 min",
-      note: "⚠️ Remind Kari: fast-forward past the opening segment before showing in class.",
+      duration: "~8 min",
+      note: "Core concept for the Holding Tank. Shows how living on last month's income breaks the paycheck-to-paycheck cycle. ⚠️ Remind Kari: fast-forward past the opening segment before showing in class.",
     },
   ];
 

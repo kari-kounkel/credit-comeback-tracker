@@ -134,7 +134,7 @@ export default function CCKTutorial({ onComplete }) {
             <span style={{ fontSize: 11, fontFamily: "'Arial', sans-serif", letterSpacing: "0.15em", color: "#C9A84C", fontWeight: 700, textTransform: "uppercase" }}>
               {step.phase}
             </span>
-            <button onClick={() => setSkipped(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)", fontSize: 12, fontFamily: "'Arial', sans-serif", letterSpacing: "0.05em", padding: "4px 0" }}>
+            <button onClick={() => { setSkipped(true); try { const allKeys = Object.keys(localStorage); const hasSeen = allKeys.some(k => k.startsWith("tutorial_seen_")); if (!hasSeen) localStorage.setItem("tutorial_seen_skipped", "true"); } catch(e) {} }} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)", fontSize: 12, fontFamily: "'Arial', sans-serif", letterSpacing: "0.05em", padding: "4px 0" }}>
               skip tutorial
             </button>
           </div>

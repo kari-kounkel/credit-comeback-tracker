@@ -4,6 +4,7 @@ import { THEMES, MONTHS, STATUSES, STATUS_LABELS, STATUS_COLORS, CAT_EMOJIS, MIL
 import { fmt, groupByCategory, saveLocal } from "../helpers";
 import { NumCell, DayCell, ProgressBar, SidebarNote } from "./SharedUI";
 import AddExpenseModal from "./AddExpenseModal";
+import ResourcesTab from "./ResourcesTab";
 import AddIncomeModal, { INCOME_EMOJIS } from "./AddIncomeModal";
 import WorkbookPages from "./WorkbookPages";
 
@@ -197,6 +198,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
               ["credit", "⭐", "Credit Score"],
               ["savings", "💰", "Savings"],
               ["workbook", "📓", "Workbook"],
+              ["resources", "🛠️", "Resources"],
               ...(isAdmin && !isDemo ? [["admin", "🔐", "Admin"]] : []),
             ].map(([id, icon, label]) => (
               <button key={id} onClick={() => setActiveTab(id)} style={{ padding: "8px 16px", border: "none", borderBottom: activeTab === id ? "2px solid " + t.gold : "2px solid transparent", background: "transparent", color: activeTab === id ? t.gold : t.textMuted, fontSize: 13, fontWeight: activeTab === id ? 600 : 400, cursor: "pointer", transition: "all 0.2s", fontFamily: "'DM Sans',sans-serif", whiteSpace: "nowrap" }}>{icon} {label}</button>
@@ -701,6 +703,10 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
         {/* ADMIN TAB */}
         {activeTab === "workbook" && (
           <WorkbookPages userId={user?.id} />
+        )}
+
+        {activeTab === "resources" && (
+          <ResourcesTab theme={theme} onReplayTutorial={onReplayTutorial} />
         )}
 
         {activeTab === "admin" && isAdmin && !isDemo && (

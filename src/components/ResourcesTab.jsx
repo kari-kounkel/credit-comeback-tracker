@@ -412,7 +412,7 @@ function FAQSection({ t }) {
 }
 
 // ─── MAIN RESOURCES TAB ──────────────────────────────────────────────────────
-export default function ResourcesTab({ theme, onReplayTutorial }) {
+export default function ResourcesTab({ theme, onReplayTutorial = () => {} }) {
   const t = THEMES[theme] || THEMES.dark;
   const [section, setSection] = useState("letters");
 

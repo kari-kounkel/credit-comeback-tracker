@@ -8,7 +8,7 @@ import ResourcesTab from "./ResourcesTab";
 import AddIncomeModal, { INCOME_EMOJIS } from "./AddIncomeModal";
 import WorkbookPages from "./WorkbookPages";
 
-export default function TrackerApp({ user, initialData, onSave, onLogout, theme, setTheme, isDemo = false, adminEmails = [] }) {
+export default function TrackerApp({ user, initialData, onSave, onLogout, theme, setTheme, isDemo = false, adminEmails = [], onReplayTutorial }) {
   const isAdmin = adminEmails.includes(user?.email);
   const t = THEMES[theme] || THEMES.dark;
   const [state, setState] = useState(initialData);

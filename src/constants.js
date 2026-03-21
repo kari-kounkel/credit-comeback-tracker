@@ -6,14 +6,14 @@ export const STATUS_COLORS = {unpaid:"#B84233",upcoming:"#D4943A",partial:"#C465
 export const CATEGORIES = [
   "Housing","Utilities","Transportation","Insurance","Subscriptions",
   "Food & Groceries","Debt Payments","Personal Care","Entertainment",
-  "Medical/Health","Giving/Tithe","Other"
+  "Medical/Health","Giving/Tithe","Variable","Other"
 ];
 
 export const CAT_EMOJIS = {
   "Housing":"🏠","Utilities":"💡","Transportation":"🚗","Insurance":"🛡️",
   "Subscriptions":"📱","Food & Groceries":"🛒","Debt Payments":"💳",
   "Personal Care":"✨","Entertainment":"🎬","Medical/Health":"🏥",
-  "Giving/Tithe":"💛","Other":"📦"
+  "Giving/Tithe":"💛","Variable":"⛽","Other":"📦"
 };
 
 export const MILESTONES = [

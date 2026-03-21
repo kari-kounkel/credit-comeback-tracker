@@ -339,8 +339,22 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                             <td style={{ padding: "10px", textAlign: "center" }}><NumCell value={b.budgeted} onChange={(v) => update((s) => { s.bills[currentMonth][b._idx].budgeted = v; })} theme={theme} /></td>
                             <td style={{ padding: "10px", textAlign: "center" }}><NumCell value={b.actual} onChange={(v) => update((s) => { s.bills[currentMonth][b._idx].actual = v; })} theme={theme} /></td>
                             <td style={{ padding: "10px", textAlign: "center", fontFamily: "'DM Mono',monospace", fontSize: 13, color: diff >= 0 ? t.green : t.red }}>{diff >= 0 ? "+" : "−"}{fmt(Math.abs(diff))}</td>
-                            <td style={{ padding: "10px", textAlign: "center" }}>
-                              <span onClick={() => cycleStatus(b._idx)} style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer", background: STATUS_COLORS[b.status] + "22", color: STATUS_COLORS[b.status], border: "1px solid " + STATUS_COLORS[b.status] + "44" }}>{STATUS_LABELS[b.status]}</span>
+                            <td style={{ padding: "10px", textAlign: "center", minWidth: 90 }}>
+                              {b.category === "Variable"
+                                ? (() => {
+                                    const spendPct = b.budgeted > 0 ? Math.min((b.actual || 0) / b.budgeted * 100, 100) : 0;
+                                    const spendColor = spendPct >= 90 ? t.red : spendPct >= 60 ? t.gold : t.green;
+                                    return (
+                                      <div style={{ width: 80, margin: "0 auto" }}>
+                                        <div style={{ height: 6, background: t.cardBorder, borderRadius: 4, overflow: "hidden" }}>
+                                          <div style={{ width: spendPct + "%", height: "100%", background: spendColor, borderRadius: 4, transition: "width 0.4s ease" }} />
+                                        </div>
+                                        <div style={{ fontSize: 10, color: t.textMuted, marginTop: 3, fontFamily: "'DM Mono',monospace" }}>{spendPct.toFixed(0) + "% used"}</div>
+                                      </div>
+                                    );
+                                  })()
+                                : <span onClick={() => cycleStatus(b._idx)} style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer", background: STATUS_COLORS[b.status] + "22", color: STATUS_COLORS[b.status], border: "1px solid " + STATUS_COLORS[b.status] + "44" }}>{STATUS_LABELS[b.status]}</span>
+                              }
                             </td>
                             <td style={{ padding: "10px", textAlign: "center" }}>
                               <button onClick={() => { if (confirm('Remove "' + b.name + '"?')) removeExpense(b._idx); }} style={{ cursor: "pointer", color: t.red, fontSize: 12, padding: "4px 8px", borderRadius: 6, border: "1px solid " + t.red + "33", background: t.red + "11", fontFamily: "'DM Sans',sans-serif", fontWeight: 600 }}>{"✕"}</button>
@@ -352,19 +366,26 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                   </table>
                 </div>
 
-                {/* Running total by due date */}
+                {/* Ripple Calculator */}
                 {(() => {
-                  const sorted = [...bills].sort((a, b) => (a.dueDay || 99) - (b.dueDay || 99));
-                  let runningTotal = totalIncome;
-                  const rows = [];
-                  let currentDay = null;
-                  sorted.forEach((b) => {
-                    if (b.dueDay !== currentDay) {
-                      currentDay = b.dueDay;
-                    }
-                    runningTotal -= (b.budgeted || 0);
-                  });
-                  return null;
+                  const varItems = bills.filter(b => b.category === "Variable");
+                  if (varItems.length === 0) return null;
+                  const varBudgeted = varItems.reduce((s, b) => s + (b.budgeted || 0), 0);
+                  const varSpent = varItems.reduce((s, b) => s + (b.actual || 0), 0);
+                  const varRemaining = varBudgeted - varSpent;
+                  const pct = varBudgeted > 0 ? Math.min((varSpent / varBudgeted) * 100, 100) : 0;
+                  const barColor = pct >= 90 ? t.red : pct >= 60 ? t.gold : t.green;
+                  return (
+                    <RippleCalculator
+                      varBudgeted={varBudgeted}
+                      varSpent={varSpent}
+                      varRemaining={varRemaining}
+                      pct={pct}
+                      barColor={barColor}
+                      t={t}
+                      fmt={fmt}
+                    />
+                  );
                 })()}
               </>
             ) : (
@@ -654,6 +675,86 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
 
       {showAddExpense && <AddExpenseModal onClose={() => setShowAddExpense(false)} onAdd={addExpense} theme={theme} />}
       {showAddIncome && <AddIncomeModal onClose={() => setShowAddIncome(false)} onAdd={addIncome} theme={theme} />}
+    </div>
+  );
+}
+
+// ─── RIPPLE CALCULATOR COMPONENT ─────────────────────────────────────────────
+function RippleCalculator({ varBudgeted, varSpent, varRemaining, pct, barColor, t, fmt }) {
+  const [whatIf, setWhatIf] = useState("");
+  const whatIfNum = parseFloat(whatIf) || 0;
+  const afterPurchase = varRemaining - whatIfNum;
+  const afterPct = varBudgeted > 0 ? Math.min(((varSpent + whatIfNum) / varBudgeted) * 100, 100) : 0;
+  const afterColor = afterPct >= 100 ? t.red : afterPct >= 75 ? t.gold : t.green;
+
+  return (
+    <div style={{ marginTop: 20, background: t.cardBg, border: "1px solid " + t.cardBorder, borderRadius: 12, padding: 20 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+        <span style={{ fontSize: 18 }}>🛒</span>
+        <span style={{ fontSize: 14, fontWeight: 700, color: t.gold, textTransform: "uppercase", letterSpacing: 1 }}>Variable Spending Envelope</span>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 12, marginBottom: 16 }}>
+        {[
+          { label: "Envelope Budget", value: fmt(varBudgeted), color: t.textMuted },
+          { label: "Spent So Far", value: fmt(varSpent), color: t.text },
+          { label: "Remaining", value: fmt(varRemaining), color: varRemaining >= 0 ? t.green : t.red },
+        ].map(s => (
+          <div key={s.label} style={{ background: t.rowHover, borderRadius: 10, padding: "12px 14px", textAlign: "center" }}>
+            <div style={{ fontSize: 10, color: t.textMuted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{s.label}</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 18, fontWeight: 700, color: s.color }}>{s.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 11, color: t.textMuted }}>
+          <span>Envelope used</span>
+          <span style={{ fontFamily: "'DM Mono',monospace", color: barColor }}>{pct.toFixed(0) + "%"}</span>
+        </div>
+        <div style={{ height: 10, background: t.cardBorder, borderRadius: 6, overflow: "hidden" }}>
+          <div style={{ width: pct + "%", height: "100%", background: barColor, borderRadius: 6, transition: "width 0.5s ease" }} />
+        </div>
+      </div>
+
+      <div style={{ borderTop: "1px solid " + t.cardBorder, paddingTop: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: t.text, marginBottom: 10 }}>{"⚡ What if I spend..."}</div>
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, background: t.rowHover, border: "1px solid " + t.cardBorder, borderRadius: 8, padding: "8px 12px" }}>
+            <span style={{ color: t.textMuted, fontSize: 14, fontFamily: "'DM Mono',monospace" }}>$</span>
+            <input
+              type="number"
+              value={whatIf}
+              onChange={e => setWhatIf(e.target.value)}
+              placeholder="150"
+              style={{ width: 80, background: "transparent", border: "none", color: t.text, fontSize: 15, fontFamily: "'DM Mono',monospace", fontWeight: 700, outline: "none" }}
+            />
+          </div>
+          {whatIfNum > 0 && (
+            <div style={{ flex: 1, minWidth: 200, background: afterPurchase < 0 ? t.red + "15" : t.green + "12", border: "1px solid " + (afterPurchase < 0 ? t.red + "44" : t.green + "33"), borderRadius: 8, padding: "10px 16px" }}>
+              <div style={{ fontSize: 11, color: t.textMuted, marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>
+                {afterPurchase < 0 ? "Over envelope by" : "Remaining after purchase"}
+              </div>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 20, fontWeight: 700, color: afterPurchase < 0 ? t.red : t.green }}>
+                {afterPurchase < 0 ? "-" : ""}{fmt(Math.abs(afterPurchase))}
+              </div>
+              <div style={{ height: 6, background: t.cardBorder, borderRadius: 4, overflow: "hidden", marginTop: 8 }}>
+                <div style={{ width: afterPct + "%", height: "100%", background: afterColor, borderRadius: 4, transition: "width 0.3s ease" }} />
+              </div>
+            </div>
+          )}
+        </div>
+        {whatIfNum > 0 && afterPurchase < 0 && (
+          <div style={{ marginTop: 10, fontSize: 12, color: t.red, fontStyle: "italic" }}>
+            {"That purchase would put you " + fmt(Math.abs(afterPurchase)) + " over your variable envelope for this month."}
+          </div>
+        )}
+        {whatIfNum > 0 && afterPurchase >= 0 && (
+          <div style={{ marginTop: 10, fontSize: 12, color: t.green, fontStyle: "italic" }}>
+            {"You have the room. " + fmt(afterPurchase) + " left in the envelope after that."}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

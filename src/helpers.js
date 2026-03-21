@@ -32,6 +32,9 @@ export function migrateData(data) {
   for (let m = 0; m < 12; m++) {
     if (!data.income[m]) data.income[m] = [];
     if (!data.bills[m]) data.bills[m] = [];
+    data.bills[m].forEach(b => {
+      if (b.category === "Variable" && !Array.isArray(b.entries)) b.entries = [];
+    });
   }
   return data;
 }

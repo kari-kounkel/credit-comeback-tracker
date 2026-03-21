@@ -44,7 +44,13 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
   const incomeItems = state.income[currentMonth] || [];
   const totalIncome = incomeItems.reduce((s, i) => s + (i.amount || 0), 0);
   const totalBudgeted = bills.reduce((s, b) => s + (b.budgeted || 0), 0);
-  const totalActual = bills.reduce((s, b) => s + (b.actual || 0), 0);
+  const totalActual = bills.reduce((s, b) => {
+    if (b.category === "Variable") {
+      const entrySum = Array.isArray(b.entries) ? b.entries.reduce((es, e) => es + (e.amount || 0), 0) : 0;
+      return s + entrySum;
+    }
+    return s + (b.actual || 0);
+  }, 0);
   const remaining = totalIncome - totalActual;
   const totalSaved = state.savings.reduce((s, v) => s + (v || 0), 0);
   const score = state.creditScores[currentMonth] || 0;
@@ -328,21 +334,45 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                     </thead>
                     <tbody>
                       {[...bills].map((b, origIdx) => ({ ...b, _idx: origIdx })).sort((a, b) => (a.dueDay || 99) - (b.dueDay || 99)).map((b, sortedIdx, arr) => {
-                        const diff = (b.budgeted || 0) - (b.actual || 0);
+                        const isVar = b.category === "Variable";
+                        const entrySum = isVar && Array.isArray(b.entries) ? b.entries.reduce((s, e) => s + (e.amount || 0), 0) : 0;
+                        const displayActual = isVar ? entrySum : (b.actual || 0);
+                        const diff = (b.budgeted || 0) - displayActual;
                         const prevDay = sortedIdx > 0 ? arr[sortedIdx - 1].dueDay : null;
                         const showDivider = prevDay !== null && b.dueDay !== prevDay;
                         return (
                           <tr key={b._idx} style={{ borderBottom: "1px solid " + t.cardBorder, borderTop: showDivider ? "2px solid " + t.gold + "33" : "none" }}>
                             <td style={{ padding: "10px", textAlign: "center", fontFamily: "'DM Mono',monospace", fontSize: 15, fontWeight: 700, color: t.gold }}>{b.dueDay || "—"}</td>
-                            <td style={{ padding: "10px", fontSize: 13, color: t.text }}>{b.name}</td>
+                            <td style={{ padding: "10px", fontSize: 13, color: t.text }}>
+                              {isVar
+                                ? <span
+                                    onClick={() => update(s => {
+                                      if (!Array.isArray(s.bills[currentMonth][b._idx].entries)) s.bills[currentMonth][b._idx].entries = [];
+                                      s.bills[currentMonth][b._idx]._expanded = !s.bills[currentMonth][b._idx]._expanded;
+                                    })}
+                                    style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                                  >
+                                    {b.name}
+                                    <span style={{ fontSize: 10, color: t.gold, padding: "1px 6px", borderRadius: 4, border: "1px solid " + t.gold + "44", background: t.gold + "11" }}>
+                                      {(b.entries || []).length + " entries " + (b._expanded ? "▲" : "▼")}
+                                    </span>
+                                  </span>
+                                : b.name
+                              }
+                            </td>
                             <td style={{ padding: "10px", fontSize: 11, color: t.textMuted }}>{CAT_EMOJIS[b.category] || "📦"} {b.category || "Other"}</td>
                             <td style={{ padding: "10px", textAlign: "center" }}><NumCell value={b.budgeted} onChange={(v) => update((s) => { s.bills[currentMonth][b._idx].budgeted = v; })} theme={theme} /></td>
-                            <td style={{ padding: "10px", textAlign: "center" }}><NumCell value={b.actual} onChange={(v) => update((s) => { s.bills[currentMonth][b._idx].actual = v; })} theme={theme} /></td>
+                            <td style={{ padding: "10px", textAlign: "center", fontFamily: "'DM Mono',monospace", fontSize: 13, color: t.text }}>
+                              {isVar
+                                ? <span style={{ color: entrySum > 0 ? t.text : t.textFaint }}>{entrySum > 0 ? fmt(entrySum) : "—"}</span>
+                                : <NumCell value={b.actual} onChange={(v) => update((s) => { s.bills[currentMonth][b._idx].actual = v; })} theme={theme} />
+                              }
+                            </td>
                             <td style={{ padding: "10px", textAlign: "center", fontFamily: "'DM Mono',monospace", fontSize: 13, color: diff >= 0 ? t.green : t.red }}>{diff >= 0 ? "+" : "−"}{fmt(Math.abs(diff))}</td>
                             <td style={{ padding: "10px", textAlign: "center", minWidth: 90 }}>
-                              {b.category === "Variable"
+                              {isVar
                                 ? (() => {
-                                    const spendPct = b.budgeted > 0 ? Math.min((b.actual || 0) / b.budgeted * 100, 100) : 0;
+                                    const spendPct = b.budgeted > 0 ? Math.min(entrySum / b.budgeted * 100, 100) : 0;
                                     const spendColor = spendPct >= 90 ? t.red : spendPct >= 60 ? t.gold : t.green;
                                     return (
                                       <div style={{ width: 80, margin: "0 auto" }}>
@@ -362,6 +392,23 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                           </tr>
                         );
                       })}
+                      {/* Variable entry log rows */}
+                      {[...bills].map((b, origIdx) => ({ ...b, _idx: origIdx })).filter(b => b.category === "Variable" && b._expanded).map(b => (
+                        <tr key={"log-" + b._idx}>
+                          <td colSpan={8} style={{ padding: "0 10px 12px 40px", background: t.gold + "08" }}>
+                            <VariableLogPanel
+                              bill={b}
+                              onAdd={(entry) => update(s => {
+                                if (!Array.isArray(s.bills[currentMonth][b._idx].entries)) s.bills[currentMonth][b._idx].entries = [];
+                                s.bills[currentMonth][b._idx].entries.push(entry);
+                              })}
+                              onRemove={(ei) => update(s => { s.bills[currentMonth][b._idx].entries.splice(ei, 1); })}
+                              t={t}
+                              fmt={fmt}
+                            />
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -371,7 +418,10 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                   const varItems = bills.filter(b => b.category === "Variable");
                   if (varItems.length === 0) return null;
                   const varBudgeted = varItems.reduce((s, b) => s + (b.budgeted || 0), 0);
-                  const varSpent = varItems.reduce((s, b) => s + (b.actual || 0), 0);
+                  const varSpent = varItems.reduce((s, b) => {
+                    const entries = Array.isArray(b.entries) ? b.entries : [];
+                    return s + entries.reduce((es, e) => es + (e.amount || 0), 0);
+                  }, 0);
                   const varRemaining = varBudgeted - varSpent;
                   const pct = varBudgeted > 0 ? Math.min((varSpent / varBudgeted) * 100, 100) : 0;
                   const barColor = pct >= 90 ? t.red : pct >= 60 ? t.gold : t.green;
@@ -675,6 +725,69 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
 
       {showAddExpense && <AddExpenseModal onClose={() => setShowAddExpense(false)} onAdd={addExpense} theme={theme} />}
       {showAddIncome && <AddIncomeModal onClose={() => setShowAddIncome(false)} onAdd={addIncome} theme={theme} />}
+    </div>
+  );
+}
+
+// ─── VARIABLE LOG PANEL ──────────────────────────────────────────────────────
+function VariableLogPanel({ bill, onAdd, onRemove, t, fmt }) {
+  const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
+  const entries = Array.isArray(bill.entries) ? bill.entries : [];
+
+  const addEntry = () => {
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0) return;
+    const today = new Date().toISOString().slice(0, 10);
+    onAdd({ amount: amt, note: note.trim() || "", date: today });
+    setAmount("");
+    setNote("");
+  };
+
+  return (
+    <div style={{ paddingTop: 10 }}>
+      {/* Entry list */}
+      {entries.length > 0 && (
+        <div style={{ marginBottom: 10 }}>
+          {entries.map((e, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 0", borderBottom: "1px solid " + t.cardBorder + "88" }}>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 700, color: t.text, minWidth: 70 }}>{fmt(e.amount)}</span>
+              <span style={{ fontSize: 12, color: t.textMuted, flex: 1 }}>{e.note || "—"}</span>
+              <span style={{ fontSize: 11, color: t.textFaint, fontFamily: "'DM Mono',monospace" }}>{e.date || ""}</span>
+              <button onClick={() => onRemove(i)} style={{ color: t.red, fontSize: 11, padding: "2px 6px", borderRadius: 4, border: "1px solid " + t.red + "33", background: t.red + "11", cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontWeight: 600 }}>✕</button>
+            </div>
+          ))}
+          <div style={{ marginTop: 6, fontSize: 12, color: t.textMuted, fontFamily: "'DM Mono',monospace" }}>
+            {"Total: "}<span style={{ color: t.gold, fontWeight: 700 }}>{fmt(entries.reduce((s, e) => s + (e.amount || 0), 0))}</span>
+          </div>
+        </div>
+      )}
+      {/* Add entry row */}
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 4, background: t.rowHover, border: "1px solid " + t.cardBorder, borderRadius: 6, padding: "4px 10px" }}>
+          <span style={{ color: t.textMuted, fontSize: 13, fontFamily: "'DM Mono',monospace" }}>$</span>
+          <input
+            type="number"
+            value={amount}
+            onChange={e => setAmount(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") addEntry(); }}
+            placeholder="0.00"
+            style={{ width: 70, background: "transparent", border: "none", color: t.text, fontSize: 13, fontFamily: "'DM Mono',monospace", fontWeight: 700, outline: "none" }}
+          />
+        </div>
+        <input
+          type="text"
+          value={note}
+          onChange={e => setNote(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") addEntry(); }}
+          placeholder="note (optional)"
+          style={{ flex: 1, minWidth: 120, padding: "5px 10px", background: t.rowHover, border: "1px solid " + t.cardBorder, borderRadius: 6, color: t.text, fontSize: 12, fontFamily: "'DM Sans',sans-serif", outline: "none" }}
+        />
+        <button
+          onClick={addEntry}
+          style={{ padding: "5px 14px", borderRadius: 6, border: "none", background: "linear-gradient(135deg," + t.gold + "," + t.goldDark + ")", color: t.btnText, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}
+        >+ Add</button>
+      </div>
     </div>
   );
 }

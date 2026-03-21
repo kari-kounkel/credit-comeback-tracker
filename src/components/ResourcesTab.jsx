@@ -225,6 +225,22 @@ Date: ${s.date || "[Date]"}`,
   },
 ];
 
+
+const BUREAUS = [
+  {
+    name: "Equifax",
+    address: "Equifax Information Services LLC\nP.O. Box 740256\nAtlanta, GA 30374-0256",
+  },
+  {
+    name: "Experian",
+    address: "Experian\nP.O. Box 4500\nAllen, TX 75013",
+  },
+  {
+    name: "TransUnion",
+    address: "TransUnion LLC Consumer Dispute Center\nP.O. Box 2000\nChester, PA 19016",
+  },
+];
+
 const FAQ_ITEMS = [
   {
     q: "How long does credit repair actually take?",
@@ -356,6 +372,20 @@ function LetterGenerator({ t }) {
           <div style={{ fontSize: 14, fontWeight: 700, color: t.gold, marginBottom: 16 }}>{letter.icon} {letter.label}</div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+            {letter.id === "dispute" && (
+              <div style={{ gridColumn: "1 / -1" }}>
+                <div style={{ fontSize: 10, color: t.textMuted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Quick Select Bureau</div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {BUREAUS.map(b => (
+                    <button key={b.name} onClick={() => { setRecipientName(b.name); setRecipientAddress(b.address); }}
+                      style={{ padding: "7px 18px", borderRadius: 7, border: "1px solid " + (recipientName === b.name ? t.gold : t.cardBorder), background: recipientName === b.name ? t.gold + "22" : t.rowHover, color: recipientName === b.name ? t.gold : t.textMuted, fontSize: 13, fontWeight: recipientName === b.name ? 700 : 400, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", transition: "all 0.2s" }}>
+                      {b.name}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ fontSize: 11, color: t.textFaint, marginTop: 6, fontStyle: "italic" }}>Selecting a bureau fills the address automatically. You can still edit below.</div>
+              </div>
+            )}
             <div style={{ gridColumn: "1 / -1" }}>
               <div style={{ fontSize: 10, color: t.textMuted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{letter.creditorLabel}</div>
               <input value={recipientName} onChange={e => setRecipientName(e.target.value)} placeholder={letter.creditorPlaceholder} style={inputStyle(t)} />

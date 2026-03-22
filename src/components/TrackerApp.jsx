@@ -20,25 +20,32 @@ const DEMO_CHARACTERS = {
     data: (() => {
       const d = { income: {}, bills: {}, creditScores: Array(12).fill(0), savings: Array(12).fill(0) };
       for (let m = 0; m < 12; m++) { d.income[m] = []; d.bills[m] = []; }
-      // Income — modest scribe wages
-      for (let m = 0; m < 12; m++) d.income[m] = [{ name: "Court of Accounts — Scribe Wages", type: "Employment", amount: 2340 }];
-      // Credit scores — low but climbing
-      d.creditScores = [0,0,0,571,0,0,578,0,0,586,0,0];
-      // Savings — tiny
-      d.savings = [0,0,0,25,0,0,40,0,0,55,0,0];
-      // Bills — March (month 2)
-      d.bills[2] = [
-        { name: "Room & Board — Eggerton Inn", category: "Housing", budgeted: 620, actual: 620, dueDay: 1, status: "paid" },
-        { name: "Candle & Ink Subscription", category: "Subscriptions", budgeted: 18, actual: 18, dueDay: 5, status: "paid" },
-        { name: "Healer Guild (old bill)", category: "Medical/Health", budgeted: 45, actual: 0, dueDay: 12, status: "unpaid" },
-        { name: "Moneylender Lord — installment", category: "Debt Payments", budgeted: 85, actual: 85, dueDay: 15, status: "paid" },
-        { name: "Royal Collections — quill debt", category: "Debt Payments", budgeted: 30, actual: 0, dueDay: 22, status: "unpaid" },
-        { name: "Market Square Grocer", category: "Food & Groceries", budgeted: 180, actual: 143, dueDay: null, status: "partial" },
-        { name: "Fuel & Transport", category: "Variable", budgeted: 60, actual: 0, dueDay: null, status: "unpaid", entries: [{ amount: 14, note: "cart to East Gate", date: "2026-03-04" }, { amount: 22, note: "market run", date: "2026-03-11" }] },
+
+      for (let m = 0; m < 12; m++) d.income[m] = [
+        { name: "Court of Accounts — Scribe Wages", type: "Employment", amount: 2340 },
       ];
+
+      // Credit scores: Jan baseline, climbing slowly after disputes filed in March
+      d.creditScores = [558, 558, 563, 571, 574, 574, 578, 582, 582, 586, 591, 591];
+
+      // Savings: starts at zero, slowly builds after getting the system in place
+      d.savings = [0, 0, 0, 25, 25, 30, 40, 40, 45, 55, 55, 65];
+
+      // Bills template — same every month with slight variations
+      const pipBills = (mo) => [
+        { name: "Room & Board — Eggerton Inn", category: "Housing", budgeted: 620, actual: mo < 3 ? 620 : 620, dueDay: 1, status: mo < 3 ? "paid" : mo === 3 ? "paid" : "paid" },
+        { name: "Candle & Ink Subscription", category: "Subscriptions", budgeted: 18, actual: 18, dueDay: 5, status: "paid" },
+        { name: "Healer Guild (old bill)", category: "Medical/Health", budgeted: 45, actual: mo < 2 ? 0 : mo < 5 ? 0 : mo < 8 ? 45 : 45, dueDay: 12, status: mo < 5 ? "unpaid" : mo < 8 ? "partial" : "paid" },
+        { name: "Moneylender Lord — installment", category: "Debt Payments", budgeted: 85, actual: mo < 1 ? 0 : 85, dueDay: 15, status: mo < 1 ? "unpaid" : "paid" },
+        { name: "Royal Collections — quill debt", category: "Debt Payments", budgeted: 30, actual: mo < 3 ? 0 : mo < 7 ? 0 : 30, dueDay: 22, status: mo < 3 ? "unpaid" : mo < 7 ? "unpaid" : "paid" },
+        { name: "Market Square Grocer", category: "Food & Groceries", budgeted: 180, actual: [143,155,148,162,170,158,165,172,160,168,174,180][mo], dueDay: null, status: "partial" },
+        { name: "Fuel & Transport", category: "Variable", budgeted: 60, actual: 0, dueDay: null, status: "unpaid", entries: mo === 0 ? [{ amount: 18, note: "cart to market", date: "2026-01-08" }] : mo === 1 ? [{ amount: 22, note: "ferry crossing", date: "2026-02-05" }, { amount: 11, note: "cart hire", date: "2026-02-19" }] : mo === 2 ? [{ amount: 14, note: "cart to East Gate", date: "2026-03-04" }, { amount: 22, note: "market run", date: "2026-03-11" }] : mo === 3 ? [{ amount: 19, note: "guild meeting transport", date: "2026-04-07" }] : mo === 4 ? [{ amount: 24, note: "three trips to market", date: "2026-05-02" }, { amount: 12, note: "East Gate cart", date: "2026-05-16" }] : mo === 5 ? [{ amount: 15, note: "cart hire", date: "2026-06-10" }] : mo === 6 ? [{ amount: 28, note: "summer market runs x4", date: "2026-07-14" }] : mo === 7 ? [{ amount: 16, note: "cart to scribe hall", date: "2026-08-03" }] : mo === 8 ? [{ amount: 20, note: "two ferry crossings", date: "2026-09-09" }] : mo === 9 ? [{ amount: 22, note: "market transport", date: "2026-10-05" }, { amount: 14, note: "guild hall", date: "2026-10-21" }] : mo === 10 ? [{ amount: 18, note: "cart hire", date: "2026-11-12" }] : [{ amount: 25, note: "year-end market runs", date: "2026-12-08" }] },
+      ];
+      for (let m = 0; m < 12; m++) d.bills[m] = pipBills(m);
       return d;
     })(),
   },
+
   beatrice: {
     name: "Wren Hatchwell",
     role: "Junior Egg Farmer, Eggerton Outer Coops",
@@ -48,22 +55,33 @@ const DEMO_CHARACTERS = {
     data: (() => {
       const d = { income: {}, bills: {}, creditScores: Array(12).fill(0), savings: Array(12).fill(0) };
       for (let m = 0; m < 12; m++) { d.income[m] = []; d.bills[m] = []; }
+
+      // Egg sales vary by season — spring/summer strong, winter thin
+      const eggSales = [1420, 1480, 1680, 1820, 1940, 2100, 2080, 1960, 1780, 1640, 1500, 1380];
       for (let m = 0; m < 12; m++) d.income[m] = [
-        { name: "Egg Sales — Eggerton Market", type: "Self-Employment", amount: 1680 },
+        { name: "Egg Sales — Eggerton Market", type: "Self-Employment", amount: eggSales[m] },
         { name: "Coop Hand — Hearthstone Farm", type: "Employment", amount: 420 },
       ];
-      d.creditScores = [0,0,0,612,0,0,619,0,0,628,0,0];
-      d.savings = [0,0,0,80,0,0,130,0,0,185,0,0];
-      d.bills[2] = [
+
+      // Score climbs steadily — on-time payments adding up, secured card aging nicely
+      d.creditScores = [601, 604, 608, 612, 616, 619, 623, 626, 628, 631, 635, 638];
+
+      // Savings growing month over month — she's disciplined
+      d.savings = [40, 55, 65, 80, 95, 110, 130, 148, 165, 185, 205, 228];
+
+      const wrenBills = (mo) => [
         { name: "Shared Cottage — East Coop Lane", category: "Housing", budgeted: 480, actual: 480, dueDay: 1, status: "paid" },
-        { name: "Feed & Supply Co.", category: "Food & Groceries", budgeted: 210, actual: 198, dueDay: 7, status: "paid" },
+        { name: "Feed & Supply Co.", category: "Food & Groceries", budgeted: 210, actual: [188,192,198,204,210,218,215,208,200,195,190,185][mo], dueDay: 7, status: "paid" },
         { name: "Eggerton Mutual Shield", category: "Insurance", budgeted: 38, actual: 38, dueDay: 10, status: "paid" },
-        { name: "Water & Well Guild", category: "Utilities", budgeted: 24, actual: 0, dueDay: 18, status: "unpaid" },
-        { name: "Straw & Grain — variable", category: "Variable", budgeted: 90, actual: 0, dueDay: null, status: "unpaid", entries: [{ amount: 31, note: "grain delivery", date: "2026-03-06" }, { amount: 27, note: "straw bales", date: "2026-03-14" }] },
+        { name: "Water & Well Guild", category: "Utilities", budgeted: 24, actual: mo === 0 ? 0 : 24, dueDay: 18, status: mo === 0 ? "unpaid" : "paid" },
+        { name: "Secured Card — Eggerton Growers Bank", category: "Debt Payments", budgeted: 25, actual: 25, dueDay: 25, status: "paid" },
+        { name: "Straw & Grain — variable", category: "Variable", budgeted: 90, actual: 0, dueDay: null, status: "unpaid", entries: mo === 0 ? [{ amount: 44, note: "winter grain stock", date: "2026-01-10" }] : mo === 1 ? [{ amount: 38, note: "straw delivery", date: "2026-02-08" }, { amount: 22, note: "extra grain", date: "2026-02-22" }] : mo === 2 ? [{ amount: 31, note: "grain delivery", date: "2026-03-06" }, { amount: 27, note: "straw bales", date: "2026-03-14" }] : mo === 3 ? [{ amount: 55, note: "spring restock — straw and grain", date: "2026-04-04" }, { amount: 18, note: "supplement feed", date: "2026-04-18" }] : mo === 4 ? [{ amount: 48, note: "summer feed run", date: "2026-05-09" }] : mo === 5 ? [{ amount: 62, note: "peak season grain", date: "2026-06-06" }, { amount: 24, note: "straw bales x3", date: "2026-06-20" }] : mo === 6 ? [{ amount: 58, note: "July grain order", date: "2026-07-11" }] : mo === 7 ? [{ amount: 45, note: "grain and straw", date: "2026-08-08" }] : mo === 8 ? [{ amount: 40, note: "fall stock", date: "2026-09-05" }] : mo === 9 ? [{ amount: 52, note: "pre-winter grain order", date: "2026-10-10" }, { amount: 20, note: "straw delivery", date: "2026-10-24" }] : mo === 10 ? [{ amount: 38, note: "winter supply", date: "2026-11-07" }] : [{ amount: 35, note: "year-end grain run", date: "2026-12-05" }] },
       ];
+      for (let m = 0; m < 12; m++) d.bills[m] = wrenBills(m);
       return d;
     })(),
   },
+
   crestfall: {
     name: "Silas Dunmere",
     role: "Former Ledgerkeeper of Crestfall — now seeking honest work in Eggerton",
@@ -73,21 +91,31 @@ const DEMO_CHARACTERS = {
     data: (() => {
       const d = { income: {}, bills: {}, creditScores: Array(12).fill(0), savings: Array(12).fill(0) };
       for (let m = 0; m < 12; m++) { d.income[m] = []; d.bills[m] = []; }
-      for (let m = 0; m < 12; m++) d.income[m] = [
-        { name: "Eggerton Counting House — temp work", type: "Employment", amount: 1950 },
-        { name: "Ledger Consulting (occasional)", type: "Self-Employment", amount: 280 },
-      ];
-      d.creditScores = [0,0,0,534,0,0,541,0,0,558,0,0];
-      d.savings = [0,0,0,0,0,0,15,0,0,30,0,0];
-      d.bills[2] = [
+
+      // Income grows as he gets established — temp to permanent mid-year
+      const consulting = [0,0,280,280,280,350,350,350,420,420,420,420];
+      const wages = [1950,1950,1950,1950,1950,2180,2180,2180,2180,2180,2180,2180];
+      for (let m = 0; m < 12; m++) {
+        d.income[m] = [{ name: "Eggerton Counting House — temp work", type: "Employment", amount: wages[m] }];
+        if (consulting[m] > 0) d.income[m].push({ name: "Ledger Consulting (occasional)", type: "Self-Employment", amount: consulting[m] });
+      }
+
+      // Score: slow start, dispute filed month 3, first jump month 5, keeps climbing
+      d.creditScores = [528, 528, 531, 534, 534, 541, 548, 552, 558, 563, 568, 574];
+
+      // Savings: nothing until month 6 when he lands the permanent role
+      d.savings = [0, 0, 0, 0, 15, 15, 30, 45, 60, 80, 100, 125];
+
+      const silasBills = (mo) => [
         { name: "Boarding House — South Eggerton", category: "Housing", budgeted: 520, actual: 520, dueDay: 1, status: "paid" },
-        { name: "Crestfall Royal Bank — charged off", category: "Debt Payments", budgeted: 0, actual: 0, dueDay: null, status: "unpaid" },
-        { name: "Prince Michlen Collections LLC", category: "Debt Payments", budgeted: 55, actual: 0, dueDay: 8, status: "unpaid" },
+        { name: "Crestfall Royal Bank — charged off", category: "Debt Payments", budgeted: 0, actual: 0, dueDay: null, status: mo < 4 ? "unpaid" : "unpaid" },
+        { name: "Prince Michlen Collections LLC", category: "Debt Payments", budgeted: 55, actual: mo < 2 ? 0 : mo < 5 ? 0 : 55, dueDay: 8, status: mo < 2 ? "unpaid" : mo < 5 ? "upcoming" : "paid" },
         { name: "Eggerton Healer — payment plan", category: "Medical/Health", budgeted: 40, actual: 40, dueDay: 12, status: "paid" },
         { name: "Secured Card — Eggerton Trust", category: "Debt Payments", budgeted: 25, actual: 25, dueDay: 20, status: "paid" },
-        { name: "Food & Provisions", category: "Food & Groceries", budgeted: 160, actual: 87, dueDay: null, status: "partial" },
-        { name: "Transport (walking mostly)", category: "Variable", budgeted: 30, actual: 0, dueDay: null, status: "unpaid", entries: [{ amount: 8, note: "ferry crossing", date: "2026-03-03" }] },
+        { name: "Food & Provisions", category: "Food & Groceries", budgeted: 160, actual: [87,92,102,118,125,130,138,142,148,152,155,160][mo], dueDay: null, status: mo < 3 ? "partial" : "partial" },
+        { name: "Transport (walking mostly)", category: "Variable", budgeted: 30, actual: 0, dueDay: null, status: "unpaid", entries: mo === 0 ? [{ amount: 5, note: "ferry — job interview", date: "2026-01-06" }] : mo === 1 ? [{ amount: 8, note: "ferry crossing", date: "2026-02-12" }] : mo === 2 ? [{ amount: 8, note: "ferry crossing", date: "2026-03-03" }] : mo === 3 ? [{ amount: 12, note: "two ferry crossings", date: "2026-04-09" }] : mo === 4 ? [{ amount: 10, note: "cart to court district", date: "2026-05-14" }] : mo === 5 ? [{ amount: 15, note: "three ferry crossings", date: "2026-06-08" }] : mo === 6 ? [{ amount: 18, note: "commute costs", date: "2026-07-05" }] : mo === 7 ? [{ amount: 14, note: "market and ferry", date: "2026-08-11" }] : mo === 8 ? [{ amount: 16, note: "transport — consulting", date: "2026-09-04" }] : mo === 9 ? [{ amount: 20, note: "four ferry crossings", date: "2026-10-07" }] : mo === 10 ? [{ amount: 18, note: "commute", date: "2026-11-03" }] : [{ amount: 22, note: "end of year travel", date: "2026-12-09" }] },
       ];
+      for (let m = 0; m < 12; m++) d.bills[m] = silasBills(m);
       return d;
     })(),
   },

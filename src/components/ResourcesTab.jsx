@@ -519,6 +519,7 @@ export default function ResourcesTab({ theme, onReplayTutorial = () => {}, userI
   const sections = [
     { id: "letters", label: "✉️ Write a Letter" },
     { id: "saved", label: "📁 My Letters" },
+    { id: "howto", label: "📖 How-To Guide" },
     { id: "support", label: "🤝 Get Support" },
     { id: "faq", label: "❓ FAQ" },
   ];
@@ -575,6 +576,63 @@ export default function ResourcesTab({ theme, onReplayTutorial = () => {}, userI
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {section === "howto" && (
+        <div style={{ maxWidth: 680 }}>
+          <h2 style={{ color: t.gold, fontFamily: "'Playfair Display',serif", fontSize: 20, margin: "0 0 20px" }}>How to Use This App</h2>
+
+          {[
+            {
+              icon: "📊",
+              title: "Start with the Dashboard",
+              body: "The Dashboard is your cockpit. Enter your monthly income, then check your bill payment statuses. The Remaining number tells you where you stand. Green means you're ahead. Red means you're informed — and informed is the first step out of chaos.",
+            },
+            {
+              icon: "📋",
+              title: "Build Your Bill List",
+              body: "Go to Bills & Budget and tap + Add Expense. Add every recurring bill — rent, utilities, subscriptions, car payment, everything. Set the amount and it fills across all 12 months automatically. You can override any individual month later.",
+            },
+            {
+              icon: "⛽",
+              title: "Track Variable Spending",
+              body: "For expenses that happen more than once a month — gas, groceries, Amazon, pharmacy runs — add them as Variable category expenses. Then switch to Bill Ladder view and tap the expense name to open the entry log. Add each purchase with an amount, a note, and the date. The envelope total updates automatically and feeds into your Remaining balance.",
+            },
+            {
+              icon: "🪜",
+              title: "Use the Bill Ladder",
+              body: "Switch to Bill Ladder view in the Bills tab to see your expenses sorted by due date — top to bottom, in the order they hit. This is your payment sequence. Work through it from top to bottom using last month's income sitting in your Holding Tank.",
+            },
+            {
+              icon: "🏦",
+              title: "Understand the Holding Tank",
+              body: "The Holding Tank tab shows you how last month's income is being deployed this month. This is the two-book system: you earn in one month, spend in the next. When the Tank Remaining number is green, you're living on last month's money — not this month's hope.",
+            },
+            {
+              icon: "⭐",
+              title: "Log Your Credit Scores",
+              body: "Go to Credit Score and enter all three bureau scores — Equifax, Experian, TransUnion. Do this every month after you check your reports. Watch the milestones light up as your scores climb. Your score is not your identity. It's a number that changes when you change.",
+            },
+            {
+              icon: "✉️",
+              title: "Write and Send Letters",
+              body: "Go to Resources → Write a Letter. Fill in your personal info once at the top — it saves to this device. Choose a letter type, fill in the recipient details, preview it, and print. Send every letter via USPS Certified Mail with Return Receipt Requested. Keep a copy of everything.",
+            },
+            {
+              icon: "💰",
+              title: "Track Your Savings",
+              body: "The Savings tab has a $20,000 Freedom Fund goal. Enter what you saved each month. Small amounts count. The green bar moves every time you add something. That bar is your future arguing with your past — and winning.",
+            },
+          ].map((item, i) => (
+            <div key={i} style={{ display: "flex", gap: 16, padding: "16px 0", borderBottom: "1px solid " + t.cardBorder }}>
+              <div style={{ fontSize: 24, flexShrink: 0, paddingTop: 2 }}>{item.icon}</div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: t.text, marginBottom: 6 }}>{item.title}</div>
+                <div style={{ fontSize: 13, color: t.textMuted, lineHeight: 1.7 }}>{item.body}</div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

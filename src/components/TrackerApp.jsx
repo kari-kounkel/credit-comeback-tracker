@@ -390,7 +390,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
             <div style={{ background: t.cardBg, border: "1px solid " + t.cardBorder, borderRadius: 12, padding: 20 }}>
               <h3 style={{ color: t.gold, fontSize: 14, fontWeight: 700, margin: "0 0 4px", textTransform: "uppercase", letterSpacing: 1 }}>{"📋"} {MONTHS[currentMonth]} Payment Status</h3>
               <p style={{ color: t.textMuted, fontSize: 12, margin: "0 0 12px" }}>Tap status to cycle: Unpaid {"→"} Upcoming {"→"} Partial {"→"} Paid</p>
-              {bills.length === 0 ? (
+            {bills.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "30px 20px", color: t.textMuted }}>
                   <div style={{ fontSize: 28, marginBottom: 8 }}>{"📝"}</div>
                   <div style={{ fontSize: 14, marginBottom: 4 }}>No expenses yet for {MONTHS[currentMonth]}</div>
@@ -435,6 +435,14 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                   style={{ padding: "4px 12px", borderRadius: 6, border: "1px solid " + t.red + "33", background: t.red + "11", color: t.red, fontSize: 11, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontWeight: 600, whiteSpace: "nowrap" }}>Clear All Bills</button>
               )}
             </div>
+
+            {bills.some(b => b.category === "Variable") && billView === "category" && (
+              <div style={{ padding: "10px 16px", background: t.gold + "15", border: "1px solid " + t.gold + "44", borderRadius: 10, marginBottom: 16, fontSize: 12, color: t.gold, lineHeight: 1.6, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 16 }}>⛽</span>
+                <span><strong>You have Variable expenses.</strong> Switch to <strong>Bill Ladder</strong> view to log individual purchases — fuel stops, Amazon runs, grocery trips — and see your envelope balance update in real time.</span>
+                <button onClick={() => setBillView("ladder")} style={{ padding: "5px 14px", borderRadius: 6, border: "none", background: t.gold, color: t.btnText, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", whiteSpace: "nowrap" }}>Switch to Ladder →</button>
+              </div>
+            )}
 
             {bills.length === 0 ? (
               <div style={{ background: t.cardBg, border: "1px solid " + t.cardBorder, borderRadius: 12, padding: "40px 20px", textAlign: "center" }}>
@@ -538,13 +546,14 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                               onAdd={(entry) => {
                                 if (demoCharacter) return;
                                 const idx = b._idx;
+                                const month = currentMonth;
                                 update(s => {
-                                  if (!s.bills[currentMonth]) s.bills[currentMonth] = [];
-                                  if (!s.bills[currentMonth][idx]) return;
-                                  if (!Array.isArray(s.bills[currentMonth][idx].entries)) {
-                                    s.bills[currentMonth][idx].entries = [];
+                                  if (!s.bills[month]) s.bills[month] = [];
+                                  if (!s.bills[month][idx]) return;
+                                  if (!Array.isArray(s.bills[month][idx].entries)) {
+                                    s.bills[month][idx].entries = [];
                                   }
-                                  s.bills[currentMonth][idx].entries.push(entry);
+                                  s.bills[month][idx].entries.push(entry);
                                 });
                               }}
                               onRemove={(ei) => {

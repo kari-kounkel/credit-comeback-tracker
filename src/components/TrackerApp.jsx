@@ -8,6 +8,91 @@ import ResourcesTab from "./ResourcesTab";
 import AddIncomeModal, { INCOME_EMOJIS } from "./AddIncomeModal";
 import WorkbookPages from "./WorkbookPages";
 
+
+// ─── EGGERTON DEMO CHARACTERS ─────────────────────────────────────────────────
+const DEMO_CHARACTERS = {
+  pip: {
+    name: "Pip Inkwell",
+    role: "Daily Scribe, Court of Accounts",
+    tagline: "Counts every egg in the kingdom. Forgot to count his own.",
+    emoji: "📜",
+    vibe: "Meticulous at work, chaotic at home. Three collections, one late card, saving nothing.",
+    data: (() => {
+      const d = { income: {}, bills: {}, creditScores: Array(12).fill(0), savings: Array(12).fill(0) };
+      for (let m = 0; m < 12; m++) { d.income[m] = []; d.bills[m] = []; }
+      // Income — modest scribe wages
+      for (let m = 0; m < 12; m++) d.income[m] = [{ name: "Court of Accounts — Scribe Wages", type: "Employment", amount: 2340 }];
+      // Credit scores — low but climbing
+      d.creditScores = [0,0,0,571,0,0,578,0,0,586,0,0];
+      // Savings — tiny
+      d.savings = [0,0,0,25,0,0,40,0,0,55,0,0];
+      // Bills — March (month 2)
+      d.bills[2] = [
+        { name: "Room & Board — Eggerton Inn", category: "Housing", budgeted: 620, actual: 620, dueDay: 1, status: "paid" },
+        { name: "Candle & Ink Subscription", category: "Subscriptions", budgeted: 18, actual: 18, dueDay: 5, status: "paid" },
+        { name: "Healer Guild (old bill)", category: "Medical/Health", budgeted: 45, actual: 0, dueDay: 12, status: "unpaid" },
+        { name: "Moneylender Lord — installment", category: "Debt Payments", budgeted: 85, actual: 85, dueDay: 15, status: "paid" },
+        { name: "Royal Collections — quill debt", category: "Debt Payments", budgeted: 30, actual: 0, dueDay: 22, status: "unpaid" },
+        { name: "Market Square Grocer", category: "Food & Groceries", budgeted: 180, actual: 143, dueDay: null, status: "partial" },
+        { name: "Fuel & Transport", category: "Variable", budgeted: 60, actual: 0, dueDay: null, status: "unpaid", entries: [{ amount: 14, note: "cart to East Gate", date: "2026-03-04" }, { amount: 22, note: "market run", date: "2026-03-11" }] },
+      ];
+      return d;
+    })(),
+  },
+  beatrice: {
+    name: "Wren Hatchwell",
+    role: "Junior Egg Farmer, Eggerton Outer Coops",
+    tagline: "First generation farmer. First generation at everything.",
+    emoji: "🥚",
+    vibe: "No debt, thin credit history, steady small income. Doing everything right — just starting.",
+    data: (() => {
+      const d = { income: {}, bills: {}, creditScores: Array(12).fill(0), savings: Array(12).fill(0) };
+      for (let m = 0; m < 12; m++) { d.income[m] = []; d.bills[m] = []; }
+      for (let m = 0; m < 12; m++) d.income[m] = [
+        { name: "Egg Sales — Eggerton Market", type: "Self-Employment", amount: 1680 },
+        { name: "Coop Hand — Hearthstone Farm", type: "Employment", amount: 420 },
+      ];
+      d.creditScores = [0,0,0,612,0,0,619,0,0,628,0,0];
+      d.savings = [0,0,0,80,0,0,130,0,0,185,0,0];
+      d.bills[2] = [
+        { name: "Shared Cottage — East Coop Lane", category: "Housing", budgeted: 480, actual: 480, dueDay: 1, status: "paid" },
+        { name: "Feed & Supply Co.", category: "Food & Groceries", budgeted: 210, actual: 198, dueDay: 7, status: "paid" },
+        { name: "Eggerton Mutual Shield", category: "Insurance", budgeted: 38, actual: 38, dueDay: 10, status: "paid" },
+        { name: "Water & Well Guild", category: "Utilities", budgeted: 24, actual: 0, dueDay: 18, status: "unpaid" },
+        { name: "Straw & Grain — variable", category: "Variable", budgeted: 90, actual: 0, dueDay: null, status: "unpaid", entries: [{ amount: 31, note: "grain delivery", date: "2026-03-06" }, { amount: 27, note: "straw bales", date: "2026-03-14" }] },
+      ];
+      return d;
+    })(),
+  },
+  crestfall: {
+    name: "Silas Dunmere",
+    role: "Former Ledgerkeeper of Crestfall — now seeking honest work in Eggerton",
+    tagline: "Kept the books for a kingdom built on lies. Rebuilding everything.",
+    emoji: "⚔️",
+    vibe: "Collections, charge-offs, maxed card. Motivated. Fighting back hard.",
+    data: (() => {
+      const d = { income: {}, bills: {}, creditScores: Array(12).fill(0), savings: Array(12).fill(0) };
+      for (let m = 0; m < 12; m++) { d.income[m] = []; d.bills[m] = []; }
+      for (let m = 0; m < 12; m++) d.income[m] = [
+        { name: "Eggerton Counting House — temp work", type: "Employment", amount: 1950 },
+        { name: "Ledger Consulting (occasional)", type: "Self-Employment", amount: 280 },
+      ];
+      d.creditScores = [0,0,0,534,0,0,541,0,0,558,0,0];
+      d.savings = [0,0,0,0,0,0,15,0,0,30,0,0];
+      d.bills[2] = [
+        { name: "Boarding House — South Eggerton", category: "Housing", budgeted: 520, actual: 520, dueDay: 1, status: "paid" },
+        { name: "Crestfall Royal Bank — charged off", category: "Debt Payments", budgeted: 0, actual: 0, dueDay: null, status: "unpaid" },
+        { name: "Prince Michlen Collections LLC", category: "Debt Payments", budgeted: 55, actual: 0, dueDay: 8, status: "unpaid" },
+        { name: "Eggerton Healer — payment plan", category: "Medical/Health", budgeted: 40, actual: 40, dueDay: 12, status: "paid" },
+        { name: "Secured Card — Eggerton Trust", category: "Debt Payments", budgeted: 25, actual: 25, dueDay: 20, status: "paid" },
+        { name: "Food & Provisions", category: "Food & Groceries", budgeted: 160, actual: 87, dueDay: null, status: "partial" },
+        { name: "Transport (walking mostly)", category: "Variable", budgeted: 30, actual: 0, dueDay: null, status: "unpaid", entries: [{ amount: 8, note: "ferry crossing", date: "2026-03-03" }] },
+      ];
+      return d;
+    })(),
+  },
+};
+
 export default function TrackerApp({ user, initialData, onSave, onLogout, theme, setTheme, isDemo = false, adminEmails = [], onReplayTutorial }) {
   const isAdmin = adminEmails.includes(user?.email);
   const t = THEMES[theme] || THEMES.dark;
@@ -18,7 +103,13 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
   const [showAddIncome, setShowAddIncome] = useState(false);
   const [billView, setBillView] = useState("category"); // "category" or "ladder"
   const [syncStatus, setSyncStatus] = useState("saved");
+  const [demoCharacter, setDemoCharacter] = useState(null);
   const saveTimer = useRef(null);
+
+  // Active data — real or demo character
+  const activeState = demoCharacter ? DEMO_CHARACTERS[demoCharacter].data : state;
+  const activeBills = activeState.bills[currentMonth] || [];
+  const activeIncome = activeState.income[currentMonth] || [];
 
   const update = useCallback((fn) => {
     setState((prev) => {
@@ -41,8 +132,8 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
   }, [state, onSave]);
 
   // Derived values
-  const bills = state.bills[currentMonth] || [];
-  const incomeItems = state.income[currentMonth] || [];
+  const bills = activeBills;
+  const incomeItems = activeIncome;
   const totalIncome = incomeItems.reduce((s, i) => s + (i.amount || 0), 0);
   const totalBudgeted = bills.reduce((s, b) => s + (b.budgeted || 0), 0);
   const totalActual = bills.reduce((s, b) => {
@@ -53,8 +144,8 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
     return s + (b.actual || 0);
   }, 0);
   const remaining = totalIncome - totalActual;
-  const totalSaved = state.savings.reduce((s, v) => s + (v || 0), 0);
-  const score = state.creditScores[currentMonth] || 0;
+  const totalSaved = activeState.savings.reduce((s, v) => s + (v || 0), 0);
+  const score = activeState.creditScores[currentMonth] || 0;
   const paidCount = bills.filter((b) => b.status === "paid").length;
   const currentMilestone = [...MILESTONES].reverse().find((m) => score >= m.score);
   const grouped = groupByCategory(bills);
@@ -90,9 +181,9 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
   const printReport = () => {
     const totalBud = bills.reduce((s, b) => s + (b.budgeted || 0), 0);
     const totalAct = bills.reduce((s, b) => s + (b.actual || 0), 0);
-    const sc = state.creditScores[currentMonth] || "Not entered";
-    const saved = state.savings[currentMonth] || 0;
-    const totalSavedAll = state.savings.reduce((s, v) => s + (v || 0), 0);
+    const sc = activeState.creditScores[currentMonth] || "Not entered";
+    const saved = activeState.savings[currentMonth] || 0;
+    const totalSavedAll = activeState.savings.reduce((s, v) => s + (v || 0), 0);
     const w = window.open("", "", "width=800,height=900");
     w.document.write(`<!DOCTYPE html><html><head><title>Credit Comeback Report - ${MONTHS[currentMonth]}</title>
     <style>body{font-family:Georgia,serif;padding:40px;color:#222;max-width:700px;margin:0 auto;}
@@ -128,6 +219,14 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
   return (
     <div style={{ minHeight: "100vh", background: t.bg, fontFamily: "'DM Sans',sans-serif", color: t.text }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+      {/* EGGERTON CHARACTER BANNER */}
+      {demoCharacter && (
+        <div style={{ background: "#1B3A5C", padding: "8px 20px", textAlign: "center", fontSize: 13, fontWeight: 700, color: "#C9A84C", letterSpacing: 0.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
+          <span>{DEMO_CHARACTERS[demoCharacter].emoji} DEMO: {DEMO_CHARACTERS[demoCharacter].name} — {DEMO_CHARACTERS[demoCharacter].role}</span>
+          <button onClick={() => setDemoCharacter(null)} style={{ padding: "3px 14px", borderRadius: 6, border: "1px solid #C9A84C44", background: "#C9A84C22", color: "#C9A84C", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>✕ Back to My Data</button>
+        </div>
+      )}
 
       {/* DEMO MODE BANNER */}
       {isDemo && (
@@ -522,9 +621,9 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
             {/* Tank overview cards */}
             {(() => {
               const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-              const prevIncomeItems = state.income[prevMonth] || [];
+              const prevIncomeItems = activeState.income[prevMonth] || [];
               const prevIncome = prevIncomeItems.reduce((s, i) => s + (i.amount || 0), 0);
-              const prevBills = (state.bills[prevMonth] || []);
+              const prevBills = (activeState.bills[prevMonth] || []);
               const prevTotalBudgeted = prevBills.reduce((s, b) => s + (b.budgeted || 0), 0);
 
               const tankDeposit = prevIncome; // Last month's income
@@ -662,7 +761,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                 {MONTHS.map((m, i) => (
                   <div key={m} style={{ textAlign: "center", padding: 8, borderRadius: 8, background: i === currentMonth ? t.gold + "18" : "transparent", border: i === currentMonth ? "1px solid " + t.gold + "33" : "1px solid transparent" }}>
                     <div style={{ fontSize: 11, color: i === currentMonth ? t.gold : t.textMuted, marginBottom: 4 }}>{m}</div>
-                    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 16, fontWeight: 700, color: state.creditScores[i] ? t.text : t.textFaint }}>{state.creditScores[i] || "—"}</div>
+                    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 16, fontWeight: 700, color: activeState.creditScores[i] ? t.text : t.textFaint }}>{activeState.creditScores[i] || "—"}</div>
                   </div>
                 ))}
               </div>
@@ -690,7 +789,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                 {MONTHS.map((m, i) => (
                   <div key={m} style={{ padding: 12, borderRadius: 10, background: i === currentMonth ? t.gold + "18" : t.rowHover, border: i === currentMonth ? "1px solid " + t.gold + "33" : "1px solid " + t.cardBorder, textAlign: "center" }}>
                     <div style={{ fontSize: 12, color: i === currentMonth ? t.gold : t.textMuted, fontWeight: i === currentMonth ? 700 : 400, marginBottom: 6 }}>{m}</div>
-                    <NumCell value={state.savings[i]} onChange={(v) => update((s) => { s.savings[i] = v; })} theme={theme} />
+                    <NumCell value={activeState.savings[i]} onChange={(v) => { if (!demoCharacter) update((s) => { s.savings[i] = v; }); }} theme={theme} />
                   </div>
                 ))}
               </div>
@@ -706,11 +805,11 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
         )}
 
         {activeTab === "resources" && (
-          <ResourcesTab theme={theme} onReplayTutorial={onReplayTutorial} />
+          <ResourcesTab theme={theme} onReplayTutorial={onReplayTutorial} userId={user?.id} />
         )}
 
         {activeTab === "admin" && isAdmin && !isDemo && (
-          <AdminTab theme={theme} t={t} user={user} />
+          <AdminTab theme={theme} t={t} user={user} demoCharacter={demoCharacter} setDemoCharacter={setDemoCharacter} />
         )}
 
         {/* FOOTER */}
@@ -879,7 +978,7 @@ function RippleCalculator({ varBudgeted, varSpent, varRemaining, pct, barColor, 
 }
 
 // ─── ADMIN TAB COMPONENT ─────────────────────────────────────────────────────
-function AdminTab({ theme, t, user }) {
+function AdminTab({ theme, t, user, demoCharacter, setDemoCharacter }) {
   const [sessionNotes, setSessionNotes] = useState("");
   const [notesSaved, setNotesSaved] = useState(false);
   const [notesLoading, setNotesLoading] = useState(true);
@@ -953,6 +1052,29 @@ function AdminTab({ theme, t, user }) {
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
         <h2 style={{ ...headingStyle, margin: 0, fontSize: 22 }}>🔐 Admin Center</h2>
         <span style={{ fontSize: 11, color: t.textMuted, padding: "3px 10px", borderRadius: 20, border: "1px solid " + t.cardBorder, background: t.rowHover }}>Visible only to you</span>
+      </div>
+
+      {/* ── EGGERTON DEMO SWITCHER ── */}
+      <div style={cardStyle}>
+        <h3 style={headingStyle}>🐔 Eggerton Class Demo</h3>
+        <p style={{ fontSize: 13, color: t.textMuted, margin: "0 0 16px", lineHeight: 1.6 }}>Switch to a demo character during class. Nothing saves — your real data stays untouched. Hit ✕ in the banner to return to your own numbers.</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12, marginBottom: 12 }}>
+          {Object.entries(DEMO_CHARACTERS).map(([key, char]) => (
+            <button key={key} onClick={() => setDemoCharacter(demoCharacter === key ? null : key)}
+              style={{ textAlign: "left", padding: "16px", borderRadius: 10, border: "1px solid " + (demoCharacter === key ? t.gold : t.cardBorder), background: demoCharacter === key ? t.gold + "18" : t.rowHover, cursor: "pointer", transition: "all 0.2s" }}>
+              <div style={{ fontSize: 22, marginBottom: 6 }}>{char.emoji}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: demoCharacter === key ? t.gold : t.text, marginBottom: 2 }}>{char.name}</div>
+              <div style={{ fontSize: 11, color: t.textMuted, marginBottom: 8 }}>{char.role}</div>
+              <div style={{ fontSize: 11, color: t.textFaint, fontStyle: "italic", lineHeight: 1.5 }}>{char.vibe}</div>
+              {demoCharacter === key && <div style={{ marginTop: 8, fontSize: 11, fontWeight: 700, color: t.gold }}>● ACTIVE — showing in dashboard</div>}
+            </button>
+          ))}
+        </div>
+        {demoCharacter && (
+          <div style={{ padding: "10px 14px", background: t.gold + "11", border: "1px solid " + t.gold + "33", borderRadius: 8, fontSize: 12, color: t.gold, fontStyle: "italic" }}>
+            "{DEMO_CHARACTERS[demoCharacter].tagline}"
+          </div>
+        )}
       </div>
 
       {/* ── CLASS VIDEOS ── */}

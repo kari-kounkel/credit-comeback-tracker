@@ -242,6 +242,79 @@ const BUREAUS = [
   },
 ];
 
+// ─── EGGERTON SAMPLE LETTERS ─────────────────────────────────────────────────
+const SAMPLE_LETTERS = [
+  {
+    character: "Silas Dunmere",
+    emoji: "⚔️",
+    role: "Former palace guard, rebuilding after judgment",
+    letterType: "validation",
+    letterLabel: "Debt Validation Letter",
+    icon: "🔍",
+    scenario: "Silas received a notice from Prince Michlen Collections claiming he owes 847 gold marks for an old guard-quarters levy. He has no record of this debt and demands proof.",
+    sender: {
+      name: "Silas Dunmere",
+      address: "14 Ember Row, Lower Eggerton",
+      cityStateZip: "Eggerton, Kingdom of Accounts, 00013",
+      phone: "",
+      email: "",
+      date: "March 1, 2026",
+    },
+    recipientName: "Prince Michlen Collections",
+    recipientAddress: "Prince Michlen Collections\n3 Dungeon Lane, Creditor's Quarter\nEggerton, Kingdom of Accounts 00007",
+    extraFields: {
+      accountNum: "PMC-REF-0847",
+      claimedAmount: "$847.00",
+    },
+  },
+  {
+    character: "Pip Inkwell",
+    emoji: "📜",
+    role: "Scribe and meticulous record-keeper, rebuilding score",
+    letterType: "goodwill",
+    letterLabel: "Goodwill Adjustment Letter",
+    icon: "💛",
+    scenario: "Pip missed one payment to the Healer Guild in January during a guild hall dispute. She has paid on time ever since and wants that single late mark removed.",
+    sender: {
+      name: "Pip Inkwell",
+      address: "7 Scroll Street, Scribe Quarter",
+      cityStateZip: "Eggerton, Kingdom of Accounts, 00013",
+      phone: "",
+      email: "pip.inkwell@scrollhall.egg",
+      date: "March 1, 2026",
+    },
+    recipientName: "The Healer Guild Billing Office",
+    recipientAddress: "The Healer Guild Billing Office\nAttn: Accounts Receivable\n22 Salve Court, Healer's Ward\nEggerton, Kingdom of Accounts 00004",
+    extraFields: {
+      accountNum: "HG-2026-PIP-001",
+      lateDateDesc: "30-day late payment — January 2026",
+      reason: "there was a billing dispute with the Guild Hall that delayed my payment by one cycle — a situation that has since been fully resolved",
+    },
+  },
+  {
+    character: "Wren Hatchwell",
+    emoji: "🥚",
+    role: "Egg farmer with thin credit history, steady climber",
+    letterType: "accountinfo",
+    letterLabel: "Request for Account Information",
+    icon: "📂",
+    scenario: "Wren discovered an old egg merchant account listed on her record that she doesn't recognize. Before disputing it, she's requesting the full account history to understand what she's dealing with.",
+    sender: {
+      name: "Wren Hatchwell",
+      address: "Hatchwell Farm, Roost Road",
+      cityStateZip: "Outer Eggerton, Kingdom of Accounts, 00019",
+      phone: "",
+      email: "",
+      date: "March 1, 2026",
+    },
+    recipientName: "Merchant's Credit Registry of Eggerton",
+    recipientAddress: "Merchant's Credit Registry of Eggerton\nAttn: Account Records\n88 Ledger Lane\nEggerton, Kingdom of Accounts 00001",
+    extraFields: {
+      accountNum: "MCR-EGG-W-0039",
+    },
+  },
+];
+
 const FAQ_ITEMS = [
   {
     q: "How long does credit repair actually take?",
@@ -519,6 +592,7 @@ export default function ResourcesTab({ theme, onReplayTutorial = () => {}, userI
   const sections = [
     { id: "letters", label: "✉️ Write a Letter" },
     { id: "saved", label: "📁 My Letters" },
+    { id: "samples", label: "🏰 Sample Letters" },
     { id: "howto", label: "📖 How-To Guide" },
     { id: "support", label: "🤝 Get Support" },
     { id: "faq", label: "❓ FAQ" },
@@ -575,6 +649,49 @@ export default function ResourcesTab({ theme, onReplayTutorial = () => {}, userI
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {section === "samples" && (
+        <div>
+          <h2 style={{ color: t.gold, fontFamily: "'Playfair Display',serif", fontSize: 20, margin: "0 0 6px" }}>🏰 Eggerton Sample Letters</h2>
+          <p style={{ color: t.textMuted, fontSize: 13, margin: "0 0 20px", lineHeight: 1.6 }}>Meet three citizens of the Kingdom of Accounts. Each one is writing a real letter for a real situation. Load any letter into the generator to see exactly how it works — then swap in your own details.</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {SAMPLE_LETTERS.map((sl, i) => (
+              <div key={i} style={{ background: t.cardBg, border: "1px solid " + t.cardBorder, borderRadius: 12, padding: 20 }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 12 }}>
+                  <div style={{ fontSize: 28, flexShrink: 0, lineHeight: 1 }}>{sl.emoji}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: t.text, marginBottom: 2 }}>{sl.character}</div>
+                    <div style={{ fontSize: 11, color: t.textMuted, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 }}>{sl.role}</div>
+                    <div style={{ fontSize: 13, color: t.textMuted, lineHeight: 1.6 }}>{sl.scenario}</div>
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, paddingTop: 12, borderTop: "1px solid " + t.cardBorder }}>
+                  <span style={{ fontSize: 16 }}>{sl.icon}</span>
+                  <span style={{ fontSize: 13, color: t.textMuted, flex: 1 }}>{sl.letterLabel}</span>
+                  <button
+                    onClick={() => {
+                      setLetterToLoad({
+                        letter_id: sl.letterType,
+                        letter_label: sl.letterLabel,
+                        sender: sl.sender,
+                        recipient_name: sl.recipientName,
+                        recipient_address: sl.recipientAddress,
+                        extra_fields: sl.extraFields,
+                      });
+                      setSection("letters");
+                    }}
+                    style={{ padding: "8px 18px", borderRadius: 8, border: "1px solid " + t.gold + "55", background: t.gold + "18", color: t.gold, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", whiteSpace: "nowrap" }}>
+                    Load Letter →
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 20, padding: "14px 18px", background: t.gold + "0d", border: "1px solid " + t.gold + "33", borderRadius: 10, fontSize: 12, color: t.textMuted, lineHeight: 1.7 }}>
+            <strong style={{ color: t.gold }}>How to use a sample letter:</strong> Click Load Letter → to open it in the generator. Update the sender section with your real information, adjust any details to match your situation, then print and send via USPS Certified Mail. The Eggerton names and addresses are placeholders — yours go there.
           </div>
         </div>
       )}

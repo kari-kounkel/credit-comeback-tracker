@@ -659,6 +659,80 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
               </div>
             )}
 
+            {/* CROSS-MONTH VARIABLE SPENDING */}
+            {(() => {
+              const varNames = [];
+              for (let m = 0; m < 12; m++) {
+                const mo = activeState.bills[m] || [];
+                mo.forEach(b => { if (b.category === "Variable" && !varNames.includes(b.name)) varNames.push(b.name); });
+              }
+              if (varNames.length === 0) return null;
+              const moShort = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+              return (
+                <div style={{ background: t.cardBg, border: "1px solid " + t.cardBorder, borderRadius: 12, padding: 16, marginTop: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: t.gold, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>{"⛽"} Variable Spending — Annual View</div>
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, fontFamily: "'DM Mono',monospace" }}>
+                      <thead>
+                        <tr>
+                          <th style={{ textAlign: "left", padding: "6px 10px 6px 0", color: t.textMuted, fontWeight: 600, whiteSpace: "nowrap", minWidth: 120 }}>Category</th>
+                          {moShort.map((m, i) => (
+                            <th key={i} style={{ textAlign: "right", padding: "6px 6px", color: i === currentMonth ? t.gold : t.textMuted, fontWeight: i === currentMonth ? 700 : 500, minWidth: 44 }}>{m}</th>
+                          ))}
+                          <th style={{ textAlign: "right", padding: "6px 0 6px 10px", color: t.gold, fontWeight: 700, minWidth: 60 }}>Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {varNames.map((name, ni) => {
+                          const monthly = moShort.map((_, mi) => {
+                            const mo = activeState.bills[mi] || [];
+                            const bill = mo.find(b => b.name === name && b.category === "Variable");
+                            if (!bill || !Array.isArray(bill.entries)) return 0;
+                            return bill.entries.reduce((s, e) => s + (e.amount || 0), 0);
+                          });
+                          const annual = monthly.reduce((s, v) => s + v, 0);
+                          return (
+                            <tr key={ni} style={{ borderTop: "1px solid " + t.cardBorder }}>
+                              <td style={{ padding: "8px 10px 8px 0", color: t.text, fontWeight: 600, whiteSpace: "nowrap" }}>{name}</td>
+                              {monthly.map((v, i) => (
+                                <td key={i} style={{ textAlign: "right", padding: "8px 6px", color: v > 0 ? (i === currentMonth ? t.gold : t.text) : t.textFaint }}>
+                                  {v > 0 ? ("$" + v.toFixed(0)) : "—"}
+                                </td>
+                              ))}
+                              <td style={{ textAlign: "right", padding: "8px 0 8px 10px", color: t.gold, fontWeight: 700 }}>{"$" + annual.toFixed(0)}</td>
+                            </tr>
+                          );
+                        })}
+                        {varNames.length > 1 && (() => {
+                          const colTotals = moShort.map((_, mi) => {
+                            return varNames.reduce((s, name) => {
+                              const mo = activeState.bills[mi] || [];
+                              const bill = mo.find(b => b.name === name && b.category === "Variable");
+                              if (!bill || !Array.isArray(bill.entries)) return s;
+                              return s + bill.entries.reduce((es, e) => es + (e.amount || 0), 0);
+                            }, 0);
+                          });
+                          const grandTotal = colTotals.reduce((s, v) => s + v, 0);
+                          return (
+                            <tr style={{ borderTop: "2px solid " + t.gold + "55" }}>
+                              <td style={{ padding: "8px 10px 8px 0", color: t.gold, fontWeight: 700 }}>All Variable</td>
+                              {colTotals.map((v, i) => (
+                                <td key={i} style={{ textAlign: "right", padding: "8px 6px", color: i === currentMonth ? t.gold : t.textMuted, fontWeight: 600 }}>
+                                  {v > 0 ? ("$" + v.toFixed(0)) : "—"}
+                                </td>
+                              ))}
+                              <td style={{ textAlign: "right", padding: "8px 0 8px 10px", color: t.gold, fontWeight: 700 }}>{"$" + grandTotal.toFixed(0)}</td>
+                            </tr>
+                          );
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div style={{ fontSize: 11, color: t.textMuted, marginTop: 10, fontStyle: "italic" }}>Current month highlighted. Totals reflect logged entries only — not budgeted amounts.</div>
+                </div>
+              );
+            })()}
+
             <SidebarNote theme={theme}>Your bills are not your enemy. They're the receipts of the life you're building. The budget column is your plan. The actual column is what happened. The difference between those two? That's where your power lives. Even $3 of awareness beats $300 of denial.</SidebarNote>
           </>
         )}

@@ -130,6 +130,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showAddIncome, setShowAddIncome] = useState(false);
   const [billView, setBillView] = useState("category"); // "category" or "ladder"
+  const [expandedVars, setExpandedVars] = useState({});
   const [syncStatus, setSyncStatus] = useState("saved");
   const [demoCharacter, setDemoCharacter] = useState(null);
   const saveTimer = useRef(null);
@@ -475,15 +476,15 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                             <td style={{ padding: "10px", fontSize: 13, color: t.text }}>
                               {isVar
                                 ? <span
-                                    onClick={() => update(s => {
-                                      if (!Array.isArray(s.bills[currentMonth][b._idx].entries)) s.bills[currentMonth][b._idx].entries = [];
-                                      s.bills[currentMonth][b._idx]._expanded = !s.bills[currentMonth][b._idx]._expanded;
-                                    })}
+                                    onClick={() => {
+                                      if (!Array.isArray(bills[b._idx].entries)) update(s => { s.bills[currentMonth][b._idx].entries = []; });
+                                      setExpandedVars(prev => ({ ...prev, [b._idx]: !prev[b._idx] }));
+                                    }}
                                     style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                                   >
                                     {b.name}
                                     <span style={{ fontSize: 10, color: t.gold, padding: "1px 6px", borderRadius: 4, border: "1px solid " + t.gold + "44", background: t.gold + "11" }}>
-                                      {(b.entries || []).length + " entries " + (b._expanded ? "▲" : "▼")}
+                                      {(b.entries || []).length + " entries " + (expandedVars[b._idx] ? "▲" : "▼")}
                                     </span>
                                   </span>
                                 : b.name
@@ -522,7 +523,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                         );
                       })}
                       {/* Variable entry log rows */}
-                      {[...bills].map((b, origIdx) => ({ ...b, _idx: origIdx })).filter(b => b.category === "Variable" && b._expanded).map(b => (
+                      {[...bills].map((b, origIdx) => ({ ...b, _idx: origIdx })).filter(b => b.category === "Variable" && expandedVars[b._idx]).map(b => (
                         <tr key={"log-" + b._idx}>
                           <td colSpan={8} style={{ padding: "0 10px 12px 40px", background: t.gold + "08" }}>
                             <VariableLogPanel

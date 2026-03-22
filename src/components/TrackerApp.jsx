@@ -197,10 +197,12 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
 
   const removeIncome = (idx) => { update((s) => { s.income[currentMonth].splice(idx, 1); }); };
 
-  const removeExpense = (idx) => { update((s) => { s.bills[currentMonth].splice(idx, 1); }); };
+  const removeExpense = (idx) => { if (demoCharacter) return; update((s) => { if (s.bills[currentMonth]) s.bills[currentMonth].splice(idx, 1); }); };
 
   const cycleStatus = (i) => {
+    if (demoCharacter) return;
     update((s) => {
+      if (!s.bills[currentMonth] || !s.bills[currentMonth][i]) return;
       const cur = s.bills[currentMonth][i].status;
       s.bills[currentMonth][i].status = STATUSES[(STATUSES.indexOf(cur) + 1) % STATUSES.length];
     });
@@ -480,7 +482,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                                       try {
                                         const bill = bills[b._idx];
                                         if (bill && !Array.isArray(bill.entries) && !demoCharacter) {
-                                          update(s => { s.bills[currentMonth][b._idx].entries = []; });
+                                          update(s => { if (s.bills[currentMonth] && s.bills[currentMonth][b._idx]) s.bills[currentMonth][b._idx].entries = []; });
                                         }
                                       } catch(e) {}
                                       setExpandedVars(prev => ({ ...prev, [b._idx]: !prev[b._idx] }));
@@ -496,11 +498,11 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                               }
                             </td>
                             <td style={{ padding: "10px", fontSize: 11, color: t.textMuted }}>{CAT_EMOJIS[b.category] || "📦"} {b.category || "Other"}</td>
-                            <td style={{ padding: "10px", textAlign: "center" }}><NumCell value={b.budgeted} onChange={(v) => update((s) => { s.bills[currentMonth][b._idx].budgeted = v; })} theme={theme} /></td>
+                            <td style={{ padding: "10px", textAlign: "center" }}><NumCell value={b.budgeted} onChange={(v) => { if (!demoCharacter) update((s) => { if (s.bills[currentMonth] && s.bills[currentMonth][b._idx]) s.bills[currentMonth][b._idx].budgeted = v; }); }} theme={theme} /></td>
                             <td style={{ padding: "10px", textAlign: "center", fontFamily: "'DM Mono',monospace", fontSize: 13, color: t.text }}>
                               {isVar
                                 ? <span style={{ color: entrySum > 0 ? t.text : t.textFaint }}>{entrySum > 0 ? fmt(entrySum) : "—"}</span>
-                                : <NumCell value={b.actual} onChange={(v) => update((s) => { s.bills[currentMonth][b._idx].actual = v; })} theme={theme} />
+                                : <NumCell value={b.actual} onChange={(v) => { if (!demoCharacter) update((s) => { if (s.bills[currentMonth] && s.bills[currentMonth][b._idx]) s.bills[currentMonth][b._idx].actual = v; }); }} theme={theme} />
                               }
                             </td>
                             <td style={{ padding: "10px", textAlign: "center", fontFamily: "'DM Mono',monospace", fontSize: 13, color: diff >= 0 ? t.green : t.red }}>{diff >= 0 ? "+" : "−"}{fmt(Math.abs(diff))}</td>
@@ -609,9 +611,9 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                           return (
                             <tr key={b._idx} style={{ borderBottom: "1px solid " + t.cardBorder }}>
                               <td style={{ padding: "10px", fontSize: 13, color: t.text }}>{b.name}</td>
-                              <td style={{ padding: "10px", textAlign: "center" }}><DayCell value={b.dueDay} onChange={(v) => update((s) => { s.bills[currentMonth][b._idx].dueDay = v; })} theme={theme} /></td>
-                              <td style={{ padding: "10px", textAlign: "center" }}><NumCell value={b.budgeted} onChange={(v) => update((s) => { s.bills[currentMonth][b._idx].budgeted = v; })} theme={theme} /></td>
-                              <td style={{ padding: "10px", textAlign: "center" }}><NumCell value={b.actual} onChange={(v) => update((s) => { s.bills[currentMonth][b._idx].actual = v; })} theme={theme} /></td>
+                              <td style={{ padding: "10px", textAlign: "center" }}><DayCell value={b.dueDay} onChange={(v) => { if (!demoCharacter) update((s) => { if (s.bills[currentMonth] && s.bills[currentMonth][b._idx]) s.bills[currentMonth][b._idx].dueDay = v; }); }} theme={theme} /></td>
+                              <td style={{ padding: "10px", textAlign: "center" }}><NumCell value={b.budgeted} onChange={(v) => { if (!demoCharacter) update((s) => { if (s.bills[currentMonth] && s.bills[currentMonth][b._idx]) s.bills[currentMonth][b._idx].budgeted = v; }); }} theme={theme} /></td>
+                              <td style={{ padding: "10px", textAlign: "center" }}><NumCell value={b.actual} onChange={(v) => { if (!demoCharacter) update((s) => { if (s.bills[currentMonth] && s.bills[currentMonth][b._idx]) s.bills[currentMonth][b._idx].actual = v; }); }} theme={theme} /></td>
                               <td style={{ padding: "10px", textAlign: "center", fontFamily: "'DM Mono',monospace", fontSize: 13, color: diff >= 0 ? t.green : t.red }}>{diff >= 0 ? "+" : "−"}{fmt(Math.abs(diff))}</td>
                               <td style={{ padding: "10px", textAlign: "center" }}>
                                 <span onClick={() => cycleStatus(b._idx)} style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer", background: STATUS_COLORS[b.status] + "22", color: STATUS_COLORS[b.status], border: "1px solid " + STATUS_COLORS[b.status] + "44" }}>{STATUS_LABELS[b.status]}</span>

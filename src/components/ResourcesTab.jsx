@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "../supabaseClient";
 import { THEMES } from "../constants";
 
 const CAL_URL = "https://cal.com/kkounkel/credit-comeback-support-15-min";
@@ -273,12 +274,59 @@ const FAQ_ITEMS = [
 ];
 
 // ─── LETTER GENERATOR ────────────────────────────────────────────────────────
-function LetterGenerator({ t }) {
+function LetterGenerator({ t, userId, loadData, onLoadConsumed }) {
   const [selectedLetter, setSelectedLetter] = useState(null);
   const [sender, setSender] = useState({ name: "", address: "", cityStateZip: "", phone: "", email: "", date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) });
   const [recipientName, setRecipientName] = useState("");
   const [recipientAddress, setRecipientAddress] = useState("");
   const [extraFields, setExtraFields] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [saveToast, setSaveToast] = useState(false);
+
+  // Load sender info from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("cck_sender_info");
+      if (stored) setSender(JSON.parse(stored));
+    } catch(e) {}
+  }, []);
+
+  // Save sender info to localStorage on every change
+  const updateSender = (key, val) => {
+    setSender(prev => {
+      const next = { ...prev, [key]: val };
+      try { localStorage.setItem("cck_sender_info", JSON.stringify(next)); } catch(e) {}
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (!loadData) return;
+    setSelectedLetter(loadData.letter_id);
+    setSender(loadData.sender || {});
+    setRecipientName(loadData.recipient_name || "");
+    setRecipientAddress(loadData.recipient_address || "");
+    setExtraFields(loadData.extra_fields || {});
+    if (onLoadConsumed) onLoadConsumed();
+  }, [loadData]);
+
+  const saveLetter = async () => {
+    if (!userId || !letter) return;
+    setSaving(true);
+    await supabase.from("saved_letters").insert({
+      user_id: userId,
+      letter_id: letter.id,
+      letter_label: letter.label,
+      sender,
+      recipient_name: recipientName,
+      recipient_address: recipientAddress,
+      extra_fields: extraFields,
+      saved_at: new Date().toISOString(),
+    });
+    setSaving(false);
+    setSaveToast(true);
+    setTimeout(() => setSaveToast(false), 2500);
+  };
 
   const letter = LETTERS.find(l => l.id === selectedLetter);
 
@@ -337,7 +385,8 @@ function LetterGenerator({ t }) {
     <div>
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: t.gold, marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>📬 Your Information</div>
-        <div style={{ fontSize: 12, color: t.textMuted, marginBottom: 12 }}>Fill this in once — it populates every letter.</div>
+        <div style={{ fontSize: 12, color: t.textMuted, marginBottom: 4 }}>Fill this in once — it populates every letter.</div>
+        <div style={{ fontSize: 11, color: t.textFaint, marginBottom: 12, fontStyle: "italic" }}>💡 Your info saves to this device automatically. If you switch browsers or devices, you'll need to re-enter it once.</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {[
             { key: "name", label: "Full Name", placeholder: "Jane Smith" },
@@ -349,7 +398,7 @@ function LetterGenerator({ t }) {
           ].map(f => (
             <div key={f.key}>
               <div style={{ fontSize: 10, color: t.textMuted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{f.label}</div>
-              <input value={sender[f.key] || ""} onChange={e => setSender(prev => ({ ...prev, [f.key]: e.target.value }))} placeholder={f.placeholder} style={inputStyle(t)} />
+              <input value={sender[f.key] || ""} onChange={e => updateSender(f.key, e.target.value)} placeholder={f.placeholder} style={inputStyle(t)} />
             </div>
           ))}
         </div>
@@ -412,6 +461,12 @@ function LetterGenerator({ t }) {
               style={{ padding: "10px 24px", borderRadius: 8, border: "none", background: "linear-gradient(135deg," + t.gold + "," + t.goldDark + ")", color: t.btnText, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
               🖨️ Print This Letter
             </button>
+            {userId && (
+              <button onClick={saveLetter} disabled={saving}
+                style={{ padding: "10px 20px", borderRadius: 8, border: "1px solid " + t.gold + "55", background: saveToast ? t.green + "22" : t.gold + "18", color: saveToast ? t.green : t.gold, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", transition: "all 0.3s" }}>
+                {saveToast ? "✓ Saved" : saving ? "Saving..." : "💾 Save Letter"}
+              </button>
+            )}
             <span style={{ fontSize: 11, color: t.textMuted, fontStyle: "italic" }}>Send via USPS Certified Mail. Keep a copy.</span>
           </div>
         </div>
@@ -442,12 +497,28 @@ function FAQSection({ t }) {
 }
 
 // ─── MAIN RESOURCES TAB ──────────────────────────────────────────────────────
-export default function ResourcesTab({ theme, onReplayTutorial = () => {} }) {
+export default function ResourcesTab({ theme, onReplayTutorial = () => {}, userId }) {
   const t = THEMES[theme] || THEMES.dark;
   const [section, setSection] = useState("letters");
+  const [savedLetters, setSavedLetters] = useState([]);
+  const [loadingLetters, setLoadingLetters] = useState(false);
+  const [letterToLoad, setLetterToLoad] = useState(null);
+
+  useEffect(() => {
+    if (!userId || section !== "saved") return;
+    setLoadingLetters(true);
+    supabase.from("saved_letters").select("*").eq("user_id", userId).order("saved_at", { ascending: false })
+      .then(({ data }) => { setSavedLetters(data || []); setLoadingLetters(false); });
+  }, [userId, section]);
+
+  const deleteLetter = async (id) => {
+    await supabase.from("saved_letters").delete().eq("id", id);
+    setSavedLetters(prev => prev.filter(l => l.id !== id));
+  };
 
   const sections = [
-    { id: "letters", label: "✉️ Letter Generator" },
+    { id: "letters", label: "✉️ Write a Letter" },
+    { id: "saved", label: "📁 My Letters" },
     { id: "support", label: "🤝 Get Support" },
     { id: "faq", label: "❓ FAQ" },
   ];
@@ -469,8 +540,42 @@ export default function ResourcesTab({ theme, onReplayTutorial = () => {} }) {
             <h2 style={{ color: t.gold, fontFamily: "'Playfair Display',serif", fontSize: 20, margin: "0 0 6px" }}>Credit Letter Generator</h2>
             <p style={{ color: t.textMuted, fontSize: 13, margin: 0, lineHeight: 1.6 }}>Fill in your information once, choose a letter, add the recipient details, and print. Send every letter via USPS Certified Mail with Return Receipt Requested — and keep a copy.</p>
           </div>
-          <LetterGenerator t={t} />
+          <LetterGenerator t={t} userId={userId} onSaved={() => {}} loadData={letterToLoad} onLoadConsumed={() => setLetterToLoad(null)} />
         </>
+      )}
+
+      {section === "saved" && (
+        <div>
+          <h2 style={{ color: t.gold, fontFamily: "'Playfair Display',serif", fontSize: 20, margin: "0 0 6px" }}>My Saved Letters</h2>
+          <p style={{ color: t.textMuted, fontSize: 13, margin: "0 0 20px", lineHeight: 1.6 }}>Your saved letters load back into the generator — update the date and print again in seconds.</p>
+          {loadingLetters && <div style={{ color: t.textMuted, fontSize: 13, padding: 20 }}>Loading your letters...</div>}
+          {!loadingLetters && savedLetters.length === 0 && (
+            <div style={{ background: t.cardBg, border: "1px solid " + t.cardBorder, borderRadius: 12, padding: 32, textAlign: "center" }}>
+              <div style={{ fontSize: 32, marginBottom: 10 }}>📭</div>
+              <div style={{ fontSize: 14, color: t.textMuted }}>No saved letters yet. Write one in the Letter Generator and save it.</div>
+            </div>
+          )}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {savedLetters.map(l => (
+              <div key={l.id} style={{ background: t.cardBg, border: "1px solid " + t.cardBorder, borderRadius: 10, padding: "14px 18px", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: t.text, marginBottom: 2 }}>{l.letter_label}</div>
+                  <div style={{ fontSize: 12, color: t.textMuted }}>{"To: " + (l.recipient_name || "—") + "  ·  Saved " + new Date(l.saved_at).toLocaleDateString()}</div>
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => { setLetterToLoad(l); setSection("letters"); }}
+                    style={{ padding: "6px 16px", borderRadius: 7, border: "1px solid " + t.gold + "55", background: t.gold + "18", color: t.gold, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+                    Load & Edit
+                  </button>
+                  <button onClick={() => { if (confirm("Delete this saved letter?")) deleteLetter(l.id); }}
+                    style={{ padding: "6px 12px", borderRadius: 7, border: "1px solid " + t.red + "33", background: t.red + "11", color: t.red, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+                    ✕
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {section === "support" && (

@@ -182,7 +182,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
   const addExpense = ({ name, category, budgeted: amt, dueDay, months: selectedMonths }) => {
     update((s) => {
       selectedMonths.forEach((on, m) => {
-        if (on) s.bills[m].push({ name, category, budgeted: amt, actual: 0, dueDay, status: "unpaid" });
+        if (on) s.bills[m].push({ name, category, budgeted: amt, actual: 0, dueDay, status: "unpaid", entries: category === "Variable" ? [] : undefined });
       });
     });
   };
@@ -537,19 +537,23 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                               bill={b}
                               onAdd={(entry) => {
                                 if (demoCharacter) return;
+                                const idx = b._idx;
                                 update(s => {
-                                  const bill = s.bills[currentMonth] && s.bills[currentMonth][b._idx];
-                                  if (!bill) return;
-                                  if (!Array.isArray(bill.entries)) bill.entries = [];
-                                  bill.entries.push(entry);
+                                  if (!s.bills[currentMonth]) s.bills[currentMonth] = [];
+                                  if (!s.bills[currentMonth][idx]) return;
+                                  if (!Array.isArray(s.bills[currentMonth][idx].entries)) {
+                                    s.bills[currentMonth][idx].entries = [];
+                                  }
+                                  s.bills[currentMonth][idx].entries.push(entry);
                                 });
                               }}
                               onRemove={(ei) => {
                                 if (demoCharacter) return;
+                                const idx = b._idx;
                                 update(s => {
-                                  const bill = s.bills[currentMonth] && s.bills[currentMonth][b._idx];
-                                  if (!bill || !Array.isArray(bill.entries)) return;
-                                  bill.entries.splice(ei, 1);
+                                  if (!s.bills[currentMonth] || !s.bills[currentMonth][idx]) return;
+                                  if (!Array.isArray(s.bills[currentMonth][idx].entries)) return;
+                                  s.bills[currentMonth][idx].entries.splice(ei, 1);
                                 });
                               }}
                               t={t}

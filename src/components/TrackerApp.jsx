@@ -533,11 +533,23 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                           <td colSpan={8} style={{ padding: "0 10px 12px 40px", background: t.gold + "08" }}>
                             <VariableLogPanel
                               bill={b}
-                              onAdd={(entry) => update(s => {
-                                if (!Array.isArray(s.bills[currentMonth][b._idx].entries)) s.bills[currentMonth][b._idx].entries = [];
-                                s.bills[currentMonth][b._idx].entries.push(entry);
-                              })}
-                              onRemove={(ei) => update(s => { s.bills[currentMonth][b._idx].entries.splice(ei, 1); })}
+                              onAdd={(entry) => {
+                                if (demoCharacter) return;
+                                update(s => {
+                                  const bill = s.bills[currentMonth] && s.bills[currentMonth][b._idx];
+                                  if (!bill) return;
+                                  if (!Array.isArray(bill.entries)) bill.entries = [];
+                                  bill.entries.push(entry);
+                                });
+                              }}
+                              onRemove={(ei) => {
+                                if (demoCharacter) return;
+                                update(s => {
+                                  const bill = s.bills[currentMonth] && s.bills[currentMonth][b._idx];
+                                  if (!bill || !Array.isArray(bill.entries)) return;
+                                  bill.entries.splice(ei, 1);
+                                });
+                              }}
                               t={t}
                               fmt={fmt}
                             />

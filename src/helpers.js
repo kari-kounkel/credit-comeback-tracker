@@ -32,9 +32,6 @@ export function migrateData(data) {
   for (let m = 0; m < 12; m++) {
     if (!data.income[m]) data.income[m] = [];
     if (!data.bills[m]) data.bills[m] = [];
-    data.bills[m].forEach(b => {
-      if (b.category === "Variable" && !Array.isArray(b.entries)) b.entries = [];
-    });
   }
   return data;
 }
@@ -73,7 +70,7 @@ export function fmt(n) {
 export function hasLocalData() {
   const d = loadLocal();
   if (!d) return false;
-  const hasIncome = d.income?.some((i) => i.amount > 0);
+  const hasIncome = Object.values(d.income || {}).some(month => Array.isArray(month) && month.some(i => i.amount > 0));
   const hasBills = Object.values(d.bills || {}).some(
     (month) => Array.isArray(month) && month.some((b) => b.budgeted > 0 || b.actual > 0)
   );

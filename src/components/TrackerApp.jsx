@@ -477,7 +477,12 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
                               {isVar
                                 ? <span
                                     onClick={() => {
-                                      if (!Array.isArray(bills[b._idx].entries)) update(s => { s.bills[currentMonth][b._idx].entries = []; });
+                                      try {
+                                        const bill = bills[b._idx];
+                                        if (bill && !Array.isArray(bill.entries) && !demoCharacter) {
+                                          update(s => { s.bills[currentMonth][b._idx].entries = []; });
+                                        }
+                                      } catch(e) {}
                                       setExpandedVars(prev => ({ ...prev, [b._idx]: !prev[b._idx] }));
                                     }}
                                     style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}

@@ -16,7 +16,7 @@ const DEMO_CHARACTERS = {
     role: "Daily Scribe, Court of Accounts",
     tagline: "Counts every egg in the kingdom. Forgot to count his own.",
     emoji: "📜",
-    vibe: "Meticulous at work, chaotic at home. Three collections, one late card, saving nothing.",
+    vibe: "Meticulous at work, chaotic at home. Score 558→591. Healer bill unpaid until month 5, quill debt collection cleared month 7. Savings creep from $0→$65. Transport entries vary monthly. Flat income $2,340/mo. No sample letters.",
     data: (() => {
       const d = { income: {}, bills: {}, creditScores: Array(12).fill(0), savings: Array(12).fill(0) };
       for (let m = 0; m < 12; m++) { d.income[m] = []; d.bills[m] = []; }
@@ -51,7 +51,7 @@ const DEMO_CHARACTERS = {
     role: "Junior Egg Farmer, Eggerton Outer Coops",
     tagline: "First generation farmer. First generation at everything.",
     emoji: "🥚",
-    vibe: "No debt, thin credit history, steady small income. Doing everything right — just starting.",
+    vibe: "No debt, thin history, two income streams. Score 601→638 — clean climb, no drama. Savings $40→$228, grows every month. Egg sales seasonal (strong spring/summer, thin winter). One missed bill Jan. Variable entries shift with farming calendar. No sample letters.",
     data: (() => {
       const d = { income: {}, bills: {}, creditScores: Array(12).fill(0), savings: Array(12).fill(0) };
       for (let m = 0; m < 12; m++) { d.income[m] = []; d.bills[m] = []; }
@@ -87,7 +87,7 @@ const DEMO_CHARACTERS = {
     role: "Former Ledgerkeeper of Crestfall — now seeking honest work in Eggerton",
     tagline: "Kept the books for a kingdom built on lies. Rebuilding everything.",
     emoji: "⚔️",
-    vibe: "Collections, charge-offs, maxed card. Motivated. Fighting back hard.",
+    vibe: "Collections, charge-off, secured card. Score 528→574 — barely moves until dispute lands month 5. Income jumps month 6 (temp→permanent, $1,950→$2,180 + consulting grows to $420). Savings $0 through April, then builds to $125. Prince Michlen Collections sits unpaid until month 5. Jan transport entry: 'ferry — job interview.' No sample letters.",
     data: (() => {
       const d = { income: {}, bills: {}, creditScores: Array(12).fill(0), savings: Array(12).fill(0) };
       for (let m = 0; m < 12; m++) { d.income[m] = []; d.bills[m] = []; }

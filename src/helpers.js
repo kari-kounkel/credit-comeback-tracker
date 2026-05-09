@@ -1,38 +1,45 @@
 import { supabase } from "./supabaseClient";
-import { STORAGE_KEY, THEME_KEY, CATEGORIES } from "./constants";
+import { STORAGE_KEY, THEME_KEY, CATEGORIES, CALENDAR_LENGTH } from "./constants";
 
 export function makeDefault() {
   const bills = {};
   const income = {};
-  for (let m = 0; m < 12; m++) {
+  for (let m = 0; m < CALENDAR_LENGTH; m++) {
     bills[m] = [];
     income[m] = [];
   }
   return {
     income,
     bills,
-    creditScores: Array(12).fill(0),
-    savings: Array(12).fill(0),
+    creditScores: Array(CALENDAR_LENGTH).fill(0),
+    savings: Array(CALENDAR_LENGTH).fill(0),
   };
 }
 
-// Migrate old flat income array to per-month format
+// Migrate old flat income array to per-month format AND extend old 12-month
+// arrays into the current CALENDAR_LENGTH (36 by default — 2026 → 2028).
+// Existing data stays in indices 0..11; new months 12..35 start empty.
 export function migrateData(data) {
   if (!data) return data;
-  // If income is an array (old format), convert to per-month
+  // (1) old: income was a flat array — wrap into per-month
   if (Array.isArray(data.income)) {
     const oldIncome = data.income;
     const newIncome = {};
-    for (let m = 0; m < 12; m++) {
-      newIncome[m] = oldIncome.map((src) => ({ ...src }));
+    for (let m = 0; m < CALENDAR_LENGTH; m++) {
+      newIncome[m] = m < 12 ? oldIncome.map((src) => ({ ...src })) : [];
     }
     data.income = newIncome;
   }
-  // Ensure all months exist
-  for (let m = 0; m < 12; m++) {
+  // (2) ensure every slot exists in the new CALENDAR_LENGTH range
+  for (let m = 0; m < CALENDAR_LENGTH; m++) {
     if (!data.income[m]) data.income[m] = [];
     if (!data.bills[m]) data.bills[m] = [];
   }
+  // (3) extend creditScores / savings arrays to CALENDAR_LENGTH if needed
+  if (!Array.isArray(data.creditScores)) data.creditScores = [];
+  if (!Array.isArray(data.savings))      data.savings      = [];
+  while (data.creditScores.length < CALENDAR_LENGTH) data.creditScores.push(0);
+  while (data.savings.length      < CALENDAR_LENGTH) data.savings.push(0);
   return data;
 }
 

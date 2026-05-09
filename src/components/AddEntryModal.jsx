@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { THEMES, MONTHS, CATEGORIES, CAT_EMOJIS } from "../constants";
+import { THEMES, MONTHS, CATEGORIES, CAT_EMOJIS, CALENDAR_LENGTH, CALENDAR_START_YEAR, getTodayIndex } from "../constants";
 import { INCOME_EMOJIS } from "./AddIncomeModal";
 
 const INCOME_TYPES = ["Employment", "Side Hustle", "Freelance", "Benefits", "Child Support", "Investment", "Other"];
@@ -21,7 +21,15 @@ export default function AddEntryModal({ defaultKind = "expense", onClose, onAddI
   const [kind, setKind] = useState(defaultKind);
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
-  const [months, setMonths] = useState(Array(12).fill(true));
+  // Default: select only the remaining months in the current year (so a new entry
+  // doesn't accidentally land in past months or future years the user hasn't planned).
+  const [months, setMonths] = useState(() => {
+    const arr = Array(CALENDAR_LENGTH).fill(false);
+    const today = getTodayIndex();
+    const yearOfToday = Math.floor(today / 12);
+    for (let i = today; i < CALENDAR_LENGTH && Math.floor(i / 12) === yearOfToday; i++) arr[i] = true;
+    return arr;
+  });
 
   // Income-only
   const [incomeType, setIncomeType] = useState("Employment");
@@ -31,7 +39,15 @@ export default function AddEntryModal({ defaultKind = "expense", onClose, onAddI
   const [dueDay, setDueDay] = useState("");
 
   const toggleMonth = (i) => setMonths((m) => { const n = [...m]; n[i] = !n[i]; return n; });
-  const toggleAll = () => { const allOn = months.every(Boolean); setMonths(Array(12).fill(!allOn)); };
+  const toggleAll = () => { const allOn = months.every(Boolean); setMonths(Array(CALENDAR_LENGTH).fill(!allOn)); };
+  const toggleYear = (yearOffset) => setMonths((m) => {
+    const n = [...m];
+    const start = yearOffset * 12;
+    const end = start + 12;
+    const allOnInYear = n.slice(start, end).every(Boolean);
+    for (let i = start; i < end; i++) n[i] = !allOnInYear;
+    return n;
+  });
 
   const submit = () => {
     if (!name.trim()) return;
@@ -168,31 +184,54 @@ export default function AddEntryModal({ defaultKind = "expense", onClose, onAddI
           )}
         </div>
 
-        {/* Months */}
+        {/* Months — grouped by year, each year has its own row + select-all */}
         <div style={fieldLabel(t)}>
           Which months?{" "}
           <span onClick={toggleAll} style={{ color: accent, cursor: "pointer", textTransform: "none", letterSpacing: 0 }}>
             ({months.every(Boolean) ? "uncheck all" : "check all"})
           </span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6, marginBottom: 22 }}>
-          {MONTHS.map((m, i) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => toggleMonth(i)}
-              style={{
-                padding: "6px",
-                borderRadius: 6,
-                border: months[i] ? "1px solid " + accent : "1px solid " + t.cardBorder,
-                background: months[i] ? accent + "22" : "transparent",
-                color: months[i] ? accent : t.textFaint,
-                fontSize: 12,
-                cursor: "pointer",
-                fontFamily: "'DM Sans',sans-serif",
-              }}
-            >{m}</button>
-          ))}
+        <div style={{ marginBottom: 22 }}>
+          {Array.from({ length: CALENDAR_LENGTH / 12 }, (_, yearOffset) => {
+            const year = CALENDAR_START_YEAR + yearOffset;
+            const yearStart = yearOffset * 12;
+            const yearMonths = months.slice(yearStart, yearStart + 12);
+            const allOnInYear = yearMonths.every(Boolean);
+            return (
+              <div key={year} style={{ marginBottom: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.textMuted, letterSpacing: 1 }}>{year}</span>
+                  <span onClick={() => toggleYear(yearOffset)} style={{ fontSize: 10, color: accent, cursor: "pointer" }}>
+                    {allOnInYear ? "clear" : "all"}
+                  </span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 4 }}>
+                  {yearMonths.map((on, j) => {
+                    const i = yearStart + j;
+                    // Just the short month part (strip the year suffix in this view)
+                    const shortLabel = MONTHS[i].split(" ")[0];
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => toggleMonth(i)}
+                        style={{
+                          padding: "5px 4px",
+                          borderRadius: 5,
+                          border: on ? "1px solid " + accent : "1px solid " + t.cardBorder,
+                          background: on ? accent + "22" : "transparent",
+                          color: on ? accent : t.textFaint,
+                          fontSize: 11,
+                          cursor: "pointer",
+                          fontFamily: "'DM Sans',sans-serif",
+                        }}
+                      >{shortLabel}</button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Buttons */}

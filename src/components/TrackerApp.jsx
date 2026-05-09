@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../supabaseClient";
-import { THEMES, MONTHS, STATUSES, STATUS_LABELS, STATUS_COLORS, CAT_EMOJIS, MILESTONES, SAVINGS_GOAL, THEME_KEY, WORKBOOK_URL, JOTFORM_URL } from "../constants";
-import { fmt, groupByCategory, saveLocal } from "../helpers";
+import { THEMES, MONTHS, STATUSES, STATUS_LABELS, STATUS_COLORS, CAT_EMOJIS, MILESTONES, SAVINGS_GOAL, THEME_KEY, WORKBOOK_URL, JOTFORM_URL, CALENDAR_LENGTH, getTodayIndex } from "../constants";
+import { fmt, groupByCategory, saveLocal, migrateData } from "../helpers";
 import { NumCell, DayCell, ProgressBar, SidebarNote } from "./SharedUI";
 import AddExpenseModal from "./AddExpenseModal";
 import ResourcesTab from "./ResourcesTab";
@@ -47,7 +47,7 @@ const DEMO_CHARACTERS = {
         { name: "Fuel & Transport", category: "Variable", budgeted: 60, actual: 0, dueDay: null, status: "unpaid", entries: mo === 0 ? [{ amount: 18, note: "cart to market", date: "2026-01-08" }] : mo === 1 ? [{ amount: 22, note: "ferry crossing", date: "2026-02-05" }, { amount: 11, note: "cart hire", date: "2026-02-19" }] : mo === 2 ? [{ amount: 14, note: "cart to East Gate", date: "2026-03-04" }, { amount: 22, note: "market run", date: "2026-03-11" }] : mo === 3 ? [{ amount: 19, note: "guild meeting transport", date: "2026-04-07" }] : mo === 4 ? [{ amount: 24, note: "three trips to market", date: "2026-05-02" }, { amount: 12, note: "East Gate cart", date: "2026-05-16" }] : mo === 5 ? [{ amount: 15, note: "cart hire", date: "2026-06-10" }] : mo === 6 ? [{ amount: 28, note: "summer market runs x4", date: "2026-07-14" }] : mo === 7 ? [{ amount: 16, note: "cart to scribe hall", date: "2026-08-03" }] : mo === 8 ? [{ amount: 20, note: "two ferry crossings", date: "2026-09-09" }] : mo === 9 ? [{ amount: 22, note: "market transport", date: "2026-10-05" }, { amount: 14, note: "guild hall", date: "2026-10-21" }] : mo === 10 ? [{ amount: 18, note: "cart hire", date: "2026-11-12" }] : [{ amount: 25, note: "year-end market runs", date: "2026-12-08" }] },
       ];
       for (let m = 0; m < 12; m++) d.bills[m] = pipBills(m);
-      return d;
+      return migrateData(d);
     })(),
   },
 
@@ -83,7 +83,7 @@ const DEMO_CHARACTERS = {
         { name: "Straw & Grain — variable", category: "Variable", budgeted: 90, actual: 0, dueDay: null, status: "unpaid", entries: mo === 0 ? [{ amount: 44, note: "winter grain stock", date: "2026-01-10" }] : mo === 1 ? [{ amount: 38, note: "straw delivery", date: "2026-02-08" }, { amount: 22, note: "extra grain", date: "2026-02-22" }] : mo === 2 ? [{ amount: 31, note: "grain delivery", date: "2026-03-06" }, { amount: 27, note: "straw bales", date: "2026-03-14" }] : mo === 3 ? [{ amount: 55, note: "spring restock — straw and grain", date: "2026-04-04" }, { amount: 18, note: "supplement feed", date: "2026-04-18" }] : mo === 4 ? [{ amount: 48, note: "summer feed run", date: "2026-05-09" }] : mo === 5 ? [{ amount: 62, note: "peak season grain", date: "2026-06-06" }, { amount: 24, note: "straw bales x3", date: "2026-06-20" }] : mo === 6 ? [{ amount: 58, note: "July grain order", date: "2026-07-11" }] : mo === 7 ? [{ amount: 45, note: "grain and straw", date: "2026-08-08" }] : mo === 8 ? [{ amount: 40, note: "fall stock", date: "2026-09-05" }] : mo === 9 ? [{ amount: 52, note: "pre-winter grain order", date: "2026-10-10" }, { amount: 20, note: "straw delivery", date: "2026-10-24" }] : mo === 10 ? [{ amount: 38, note: "winter supply", date: "2026-11-07" }] : [{ amount: 35, note: "year-end grain run", date: "2026-12-05" }] },
       ];
       for (let m = 0; m < 12; m++) d.bills[m] = wrenBills(m);
-      return d;
+      return migrateData(d);
     })(),
   },
 
@@ -121,7 +121,7 @@ const DEMO_CHARACTERS = {
         { name: "Transport (walking mostly)", category: "Variable", budgeted: 30, actual: 0, dueDay: null, status: "unpaid", entries: mo === 0 ? [{ amount: 5, note: "ferry — job interview", date: "2026-01-06" }] : mo === 1 ? [{ amount: 8, note: "ferry crossing", date: "2026-02-12" }] : mo === 2 ? [{ amount: 8, note: "ferry crossing", date: "2026-03-03" }] : mo === 3 ? [{ amount: 12, note: "two ferry crossings", date: "2026-04-09" }] : mo === 4 ? [{ amount: 10, note: "cart to court district", date: "2026-05-14" }] : mo === 5 ? [{ amount: 15, note: "three ferry crossings", date: "2026-06-08" }] : mo === 6 ? [{ amount: 18, note: "commute costs", date: "2026-07-05" }] : mo === 7 ? [{ amount: 14, note: "market and ferry", date: "2026-08-11" }] : mo === 8 ? [{ amount: 16, note: "transport — consulting", date: "2026-09-04" }] : mo === 9 ? [{ amount: 20, note: "four ferry crossings", date: "2026-10-07" }] : mo === 10 ? [{ amount: 18, note: "commute", date: "2026-11-03" }] : [{ amount: 22, note: "end of year travel", date: "2026-12-09" }] },
       ];
       for (let m = 0; m < 12; m++) d.bills[m] = silasBills(m);
-      return d;
+      return migrateData(d);
     })(),
   },
 };
@@ -130,7 +130,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
   const isAdmin = adminEmails.includes(user?.email);
   const t = THEMES[theme] || THEMES.dark;
   const [state, setState] = useState(initialData);
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+  const [currentMonth, setCurrentMonth] = useState(getTodayIndex());
   const [activeTab, setActiveTab] = useState("today");
   const [moneySubTab, setMoneySubTab] = useState("budget"); // budget | forecast | tank | savings
   const [learnSubTab, setLearnSubTab] = useState("workbook"); // workbook | howto | support | faq
@@ -248,7 +248,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
       <div><div class="label">Saved This Month</div><div class="value">${fmt(saved)}</div></div>
       <div><div class="label">Total Saved (YTD)</div><div class="value">${fmt(totalSavedAll)} / $20,000</div></div>
     </div>
-    <div class="footer">Credit Comeback Kit™ is the proprietary intellectual property of CARES Consulting, Inc. &amp; Kari Hoglund Kounkel.<br/>© 2025–2026. All rights reserved. Unauthorized use, duplication, hosting, or distribution is strictly prohibited.<br/><em>Now go be brilliant.</em></div>
+    <div class="footer">Credit Comeback Kit™ is the proprietary intellectual property of CARES Consulting, Inc. &amp; Kari Hoglund Kounkel.<br/>© 2025–2026. All rights reserved. Unauthorized use, duplication, hosting, or distribution is strictly prohibited.<br/><em>Sparkle. The world deserves you.</em></div>
     </body></html>`);
     w.document.close();
     w.print();
@@ -336,11 +336,42 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
             </div>
           </div>
 
-          {/* Months */}
-          <div style={{ display: "flex", gap: 4, marginTop: 16, flexWrap: "wrap" }}>
-            {MONTHS.map((m, i) => (
-              <button key={m} onClick={() => setCurrentMonth(i)} style={{ padding: "5px 10px", borderRadius: 8, border: currentMonth === i ? "1px solid " + t.gold : "1px solid " + t.cardBorder, background: currentMonth === i ? t.gold + "33" : t.cardBg, color: currentMonth === i ? t.gold : t.textMuted, fontSize: 12, fontWeight: currentMonth === i ? 700 : 500, cursor: "pointer", transition: "all 0.2s", fontFamily: "'DM Sans',sans-serif" }}>{m}</button>
-            ))}
+          {/* Months — rolling 36-month window (2026 → 2028); horizontally scrollable */}
+          <div style={{ marginTop: 16, position: "relative" }}>
+            <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "thin" }}
+                 ref={(el) => {
+                   // Auto-scroll the picker so the active month stays in view on first paint.
+                   if (el && !el.dataset.scrolled) {
+                     const btn = el.querySelector(`[data-monthidx="${currentMonth}"]`);
+                     if (btn) btn.scrollIntoView({ behavior: "auto", inline: "center", block: "nearest" });
+                     el.dataset.scrolled = "1";
+                   }
+                 }}>
+              {MONTHS.map((m, i) => {
+                const isActive = currentMonth === i;
+                const yearJustChanged = i > 0 && Math.floor(i / 12) !== Math.floor((i - 1) / 12);
+                return (
+                  <div key={m} style={{ display: "flex", alignItems: "center" }}>
+                    {yearJustChanged && (
+                      <div style={{ width: 1, height: 22, background: t.cardBorder, margin: "0 6px" }} />
+                    )}
+                    <button
+                      onClick={() => setCurrentMonth(i)}
+                      data-monthidx={i}
+                      style={{
+                        padding: "5px 10px", borderRadius: 8,
+                        border: isActive ? "1px solid " + t.gold : "1px solid " + t.cardBorder,
+                        background: isActive ? t.gold + "33" : t.cardBg,
+                        color: isActive ? t.gold : t.textMuted,
+                        fontSize: 12, fontWeight: isActive ? 700 : 500,
+                        cursor: "pointer", transition: "all 0.2s",
+                        fontFamily: "'DM Sans',sans-serif", whiteSpace: "nowrap",
+                      }}
+                    >{m}</button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Tabs */}
@@ -496,7 +527,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
             <div style={{ padding: "10px 16px", background: t.gold + "11", border: "1px solid " + t.gold + "33", borderRadius: 10, marginBottom: 16, fontSize: 12, color: t.gold, lineHeight: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
               <span>{"💡"} <strong>Make it yours:</strong> Add your actual bills using + Add Expense. Set the amount once and it fills across all selected months. You can override any individual month later.</span>
               {bills.length > 0 && (
-                <button onClick={() => { if (confirm("⚠️ THIS WILL DELETE ALL BILLS — PAST, PRESENT, AND FUTURE.\n\nEvery month will be wiped clean. You'll start completely fresh.\n\nAre you sure?")) update((s) => { for (let m = 0; m < 12; m++) s.bills[m] = []; }); }}
+                <button onClick={() => { if (confirm("⚠️ THIS WILL DELETE ALL BILLS — PAST, PRESENT, AND FUTURE.\n\nEvery month will be wiped clean. You'll start completely fresh.\n\nAre you sure?")) update((s) => { for (let m = 0; m < CALENDAR_LENGTH; m++) s.bills[m] = []; }); }}
                   style={{ padding: "4px 12px", borderRadius: 6, border: "1px solid " + t.red + "33", background: t.red + "11", color: t.red, fontSize: 11, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontWeight: 600, whiteSpace: "nowrap" }}>Clear All Bills</button>
               )}
             </div>
@@ -727,12 +758,12 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
             {/* CROSS-MONTH VARIABLE SPENDING */}
             {(() => {
               const varNames = [];
-              for (let m = 0; m < 12; m++) {
+              for (let m = 0; m < CALENDAR_LENGTH; m++) {
                 const mo = activeState.bills[m] || [];
                 mo.forEach(b => { if (b.category === "Variable" && !varNames.includes(b.name)) varNames.push(b.name); });
               }
               if (varNames.length === 0) return null;
-              const moShort = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+              const moShort = MONTHS;  // already labeled "Jan '26" through "Dec '28"
               return (
                 <div style={{ background: t.cardBg, border: "1px solid " + t.cardBorder, borderRadius: 12, padding: 16, marginTop: 8 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: t.gold, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>{"⛽"} Variable Spending — Annual View</div>
@@ -989,7 +1020,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
             <span style={{ color: t.textMuted, fontWeight: 600 }}>CARES Consulting, Inc. &amp; Kari Hoglund Kounkel</span><br/>
             © 2025–2026. All rights reserved. Unauthorized use, duplication, hosting, or distribution is strictly prohibited.
           </div>
-          <div style={{ marginTop: 8, fontStyle: "italic", color: t.textFaint, fontSize: 12 }}>Now go be brilliant.</div>
+          <div style={{ marginTop: 8, fontStyle: "italic", color: t.textFaint, fontSize: 12 }}>Sparkle. The world deserves you.</div>
         </div>
       </div>
 

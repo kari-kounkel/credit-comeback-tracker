@@ -282,7 +282,7 @@ export default function AuthScreen({ onAuth, theme, setTheme }) {
           © 2025–2026. All rights reserved.<br/>
           Unauthorized use, duplication, hosting, or distribution is strictly prohibited.
         </div>
-        <div style={{ marginTop: 8, fontStyle: "italic", color: t.textFaint, fontSize: 11 }}>Now go be brilliant.</div>
+        <div style={{ marginTop: 8, fontStyle: "italic", color: t.textFaint, fontSize: 11 }}>Sparkle. The world deserves you.</div>
       </div>
     </div>
   );

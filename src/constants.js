@@ -1,4 +1,30 @@
-export const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+// ─── ROLLING CALENDAR ───────────────────────────────────────────────
+// Indices 0..11  = 2026, 12..23 = 2027, 24..35 = 2028.
+// Existing user data lived as a 12-array (assumed 2026); migrateData()
+// in helpers.js extends old data into the new 36-slot shape.
+export const CALENDAR_START_YEAR = 2026;
+export const CALENDAR_YEARS = 3;            // 2026, 2027, 2028
+export const CALENDAR_LENGTH = CALENDAR_YEARS * 12; // 36
+const SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+// MONTHS keeps the historical shape of "an array of 12 short labels" — but it's
+// now an array of 36 labels with year suffixes ("Jan '26", "Feb '26", … "Dec '28").
+// Components iterating MONTHS.map((m, i) => …) keep working; the labels get longer.
+export const MONTHS = Array.from({ length: CALENDAR_LENGTH }, (_, i) => {
+  const year = CALENDAR_START_YEAR + Math.floor(i / 12);
+  return SHORT[i % 12] + " '" + String(year).slice(-2);
+});
+
+// Helper: today's index in the 36-slot array.
+export function getTodayIndex() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth(); // 0..11
+  let idx = (year - CALENDAR_START_YEAR) * 12 + month;
+  if (idx < 0) idx = 0;
+  if (idx >= CALENDAR_LENGTH) idx = CALENDAR_LENGTH - 1;
+  return idx;
+}
 export const STATUSES = ["unpaid","upcoming","partial","paid"];
 export const STATUS_LABELS = {unpaid:"Unpaid",upcoming:"Upcoming",partial:"Partial",paid:"Paid ✓"};
 export const STATUS_COLORS = {unpaid:"#B84233",upcoming:"#D4943A",partial:"#C4652A",paid:"#5A8A59"};

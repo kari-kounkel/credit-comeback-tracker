@@ -8,6 +8,8 @@ import ResourcesTab from "./ResourcesTab";
 import AddIncomeModal, { INCOME_EMOJIS } from "./AddIncomeModal";
 import WorkbookPages from "./WorkbookPages";
 import BudgetTimeline from "./BudgetTimeline";
+import PendingViewRequestsBanner from "./PendingViewRequestsBanner";
+import CoachAccessPanel from "./CoachAccessPanel";
 
 
 // ─── EGGERTON DEMO CHARACTERS ─────────────────────────────────────────────────
@@ -251,6 +253,9 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
   return (
     <div style={{ minHeight: "100vh", background: t.bg, fontFamily: "'DM Sans',sans-serif", color: t.text }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+
+      {/* PENDING VIEW-REQUEST BANNER (sticky at top — shows incoming coach access requests) */}
+      {!isDemo && <PendingViewRequestsBanner user={user} theme={theme} />}
 
       {/* EGGERTON CHARACTER BANNER */}
       {demoCharacter && (
@@ -1121,6 +1126,9 @@ function RippleCalculator({ varBudgeted, varSpent, varRemaining, pct, barColor, 
 
 // ─── ADMIN TAB COMPONENT ─────────────────────────────────────────────────────
 function AdminTab({ theme, t, user, demoCharacter, setDemoCharacter }) {
+  // Coach access panel goes at the very top of the admin view (most-used tool)
+  const coachPanel = <CoachAccessPanel user={user} theme={theme} t={t} />;
+
   const [sessionNotes, setSessionNotes] = useState("");
   const [notesSaved, setNotesSaved] = useState(false);
   const [notesLoading, setNotesLoading] = useState(true);
@@ -1195,6 +1203,9 @@ function AdminTab({ theme, t, user, demoCharacter, setDemoCharacter }) {
         <h2 style={{ ...headingStyle, margin: 0, fontSize: 22 }}>🔐 Admin Center</h2>
         <span style={{ fontSize: 11, color: t.textMuted, padding: "3px 10px", borderRadius: 20, border: "1px solid " + t.cardBorder, background: t.rowHover }}>Visible only to you</span>
       </div>
+
+      {/* ── COACH ACCESS — request to view a participant's data ── */}
+      {coachPanel}
 
       {/* ── EGGERTON DEMO SWITCHER ── */}
       <div style={cardStyle}>

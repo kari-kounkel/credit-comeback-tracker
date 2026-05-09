@@ -57,10 +57,10 @@ export function saveLocal(data) {
 
 export function loadTheme() {
   try {
-    return localStorage.getItem(THEME_KEY) || "dark";
-  } catch (e) {
-    return "dark";
-  }
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved) return saved;
+  } catch (e) {}
+  return "crisp"; // new default
 }
 
 export function fmt(n) {

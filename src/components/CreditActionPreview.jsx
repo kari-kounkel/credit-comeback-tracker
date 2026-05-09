@@ -50,22 +50,13 @@ export default function CreditActionPreview({ activeState, currentMonth, theme, 
 
   return (
     <div>
-      {/* DEMO STAMP — small badge so this is visibly the preview, not the live page */}
-      <div style={{
-        display: "inline-block",
-        padding: "4px 12px",
-        background: "#C9A84C22",
-        color: "#C9A84C",
-        border: "1px solid #C9A84C55",
-        borderRadius: 999,
-        fontSize: 10,
-        fontWeight: 700,
-        letterSpacing: 1,
-        textTransform: "uppercase",
-        marginBottom: 14,
-      }}>
-        🧪 Preview · Combined Credit Score + Letters
-      </div>
+      {/* Page heading */}
+      <h2 style={{ color: t.gold, fontFamily: "'Playfair Display',serif", fontSize: 22, margin: "0 0 4px" }}>
+        ⭐ Credit
+      </h2>
+      <p style={{ color: t.textMuted, fontSize: 12, margin: "0 0 18px" }}>
+        Track your score · write the letters that move it.
+      </p>
 
       {/* ── SCORE BLOCK (top, prominent) ── */}
       <div style={{
@@ -275,21 +266,6 @@ export default function CreditActionPreview({ activeState, currentMonth, theme, 
         ))}
       </div>
 
-      {/* DEMO FOOTER — tiny prompt for Kari */}
-      <div style={{
-        marginTop: 24,
-        padding: 16,
-        background: t.cardBg,
-        border: "1px dashed " + t.gold + "55",
-        borderRadius: 10,
-        fontSize: 12,
-        color: t.textMuted,
-        textAlign: "center",
-        lineHeight: 1.6,
-      }}>
-        🧪 <strong style={{ color: t.gold }}>Preview only.</strong> The live Credit Score tab and Resources tab haven't changed.
-        If this layout works, tell Ernie "promote it" — the live Credit Score tab will switch to this design and the letter sections in Resources will be removed.
-      </div>
     </div>
   );
 }

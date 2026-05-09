@@ -571,12 +571,31 @@ function FAQSection({ t }) {
 }
 
 // ─── MAIN RESOURCES TAB ──────────────────────────────────────────────────────
-export default function ResourcesTab({ theme, onReplayTutorial = () => {}, userId }) {
+// Props:
+//   theme              — color theme key
+//   onReplayTutorial   — callback for replay button
+//   userId             — current user (for saved letters)
+//   initialSection     — which sub-section to land on (default 'letters')
+//   hideLetterSections — when true, suppress 'letters', 'saved', 'samples'
+//                        (because those moved to the Credit tab)
+//   hideOwnNav         — when true, don't render the internal sub-nav
+//                        (because the parent Learn tab already owns the nav)
+export default function ResourcesTab({
+  theme,
+  onReplayTutorial = () => {},
+  userId,
+  initialSection = "letters",
+  hideLetterSections = false,
+  hideOwnNav = false,
+}) {
   const t = THEMES[theme] || THEMES.dark;
-  const [section, setSection] = useState("letters");
+  const [section, setSection] = useState(initialSection);
   const [savedLetters, setSavedLetters] = useState([]);
   const [loadingLetters, setLoadingLetters] = useState(false);
   const [letterToLoad, setLetterToLoad] = useState(null);
+
+  // Keep internal section in sync if parent steers it (Learn sub-tabs)
+  useEffect(() => { setSection(initialSection); }, [initialSection]);
 
   useEffect(() => {
     if (!userId || section !== "saved") return;
@@ -591,24 +610,26 @@ export default function ResourcesTab({ theme, onReplayTutorial = () => {}, userI
   };
 
   const sections = [
-    { id: "letters", label: "✉️ Write a Letter" },
-    { id: "saved", label: "📁 My Letters" },
-    { id: "samples", label: "🏰 Sample Letters" },
-    { id: "howto", label: "📖 How-To Guide" },
+    !hideLetterSections && { id: "letters", label: "✉️ Write a Letter" },
+    !hideLetterSections && { id: "saved",   label: "📁 My Letters" },
+    !hideLetterSections && { id: "samples", label: "🏰 Sample Letters" },
+    { id: "howto",   label: "📖 How-To Guide" },
     { id: "support", label: "🤝 Get Support" },
-    { id: "faq", label: "❓ FAQ" },
-  ];
+    { id: "faq",     label: "❓ FAQ" },
+  ].filter(Boolean);
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 24, borderBottom: "1px solid " + t.cardBorder, paddingBottom: 0 }}>
-        {sections.map(s => (
-          <button key={s.id} onClick={() => setSection(s.id)}
-            style={{ padding: "8px 16px", border: "none", borderBottom: section === s.id ? "2px solid " + t.gold : "2px solid transparent", background: "transparent", color: section === s.id ? t.gold : t.textMuted, fontSize: 13, fontWeight: section === s.id ? 700 : 400, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", whiteSpace: "nowrap", transition: "all 0.2s" }}>
-            {s.label}
-          </button>
-        ))}
-      </div>
+      {!hideOwnNav && (
+        <div style={{ display: "flex", gap: 8, marginBottom: 24, borderBottom: "1px solid " + t.cardBorder, paddingBottom: 0 }}>
+          {sections.map(s => (
+            <button key={s.id} onClick={() => setSection(s.id)}
+              style={{ padding: "8px 16px", border: "none", borderBottom: section === s.id ? "2px solid " + t.gold : "2px solid transparent", background: "transparent", color: section === s.id ? t.gold : t.textMuted, fontSize: 13, fontWeight: section === s.id ? 700 : 400, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", whiteSpace: "nowrap", transition: "all 0.2s" }}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {section === "letters" && (
         <>

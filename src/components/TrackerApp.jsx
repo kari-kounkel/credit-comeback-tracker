@@ -10,6 +10,8 @@ import WorkbookPages from "./WorkbookPages";
 import BudgetTimeline from "./BudgetTimeline";
 import PendingViewRequestsBanner from "./PendingViewRequestsBanner";
 import CoachAccessPanel from "./CoachAccessPanel";
+import CreditActionPreview from "./CreditActionPreview";
+import AddEntryModal from "./AddEntryModal";
 
 
 // ─── EGGERTON DEMO CHARACTERS ─────────────────────────────────────────────────
@@ -336,7 +338,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
               ["savings", "💰", "Savings"],
               ["workbook", "📓", "Workbook"],
               ["resources", "🛠️", "Resources"],
-              ...(isAdmin && !isDemo ? [["admin", "🔐", "Admin"]] : []),
+              ...(isAdmin && !isDemo ? [["preview", "🧪", "Preview"], ["admin", "🔐", "Admin"]] : []),
             ].map(([id, icon, label]) => (
               <button key={id} onClick={() => setActiveTab(id)} style={{ padding: "8px 16px", border: "none", borderBottom: activeTab === id ? "2px solid " + t.gold : "2px solid transparent", background: "transparent", color: activeTab === id ? t.gold : t.textMuted, fontSize: 13, fontWeight: activeTab === id ? 600 : 400, cursor: "pointer", transition: "all 0.2s", fontFamily: "'DM Sans',sans-serif", whiteSpace: "nowrap" }}>{icon} {label}</button>
             ))}
@@ -955,6 +957,17 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
           <ResourcesTab theme={theme} onReplayTutorial={onReplayTutorial} userId={user?.id} />
         )}
 
+        {activeTab === "preview" && isAdmin && !isDemo && (
+          <CreditActionPreview
+            activeState={activeState}
+            currentMonth={currentMonth}
+            theme={theme}
+            update={update}
+            demoCharacter={demoCharacter}
+            user={user}
+          />
+        )}
+
         {activeTab === "admin" && isAdmin && !isDemo && (
           <AdminTab theme={theme} t={t} user={user} demoCharacter={demoCharacter} setDemoCharacter={setDemoCharacter} />
         )}
@@ -975,8 +988,24 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
         </div>
       </div>
 
-      {showAddExpense && <AddExpenseModal onClose={() => setShowAddExpense(false)} onAdd={addExpense} theme={theme} />}
-      {showAddIncome && <AddIncomeModal onClose={() => setShowAddIncome(false)} onAdd={addIncome} theme={theme} />}
+      {showAddExpense && (
+        <AddEntryModal
+          defaultKind="expense"
+          onClose={() => setShowAddExpense(false)}
+          onAddExpense={addExpense}
+          onAddIncome={addIncome}
+          theme={theme}
+        />
+      )}
+      {showAddIncome && (
+        <AddEntryModal
+          defaultKind="income"
+          onClose={() => setShowAddIncome(false)}
+          onAddExpense={addExpense}
+          onAddIncome={addIncome}
+          theme={theme}
+        />
+      )}
     </div>
   );
 }

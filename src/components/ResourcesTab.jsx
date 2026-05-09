@@ -347,7 +347,8 @@ const FAQ_ITEMS = [
 ];
 
 // ─── LETTER GENERATOR ────────────────────────────────────────────────────────
-function LetterGenerator({ t, userId, loadData, onLoadConsumed }) {
+export { LETTERS, BUREAUS, SAMPLE_LETTERS };
+export function LetterGenerator({ t, userId, loadData, onLoadConsumed }) {
   const [selectedLetter, setSelectedLetter] = useState(null);
   const [sender, setSender] = useState({ name: "", address: "", cityStateZip: "", phone: "", email: "", date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) });
   const [recipientName, setRecipientName] = useState("");

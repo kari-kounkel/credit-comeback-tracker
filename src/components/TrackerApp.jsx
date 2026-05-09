@@ -7,6 +7,7 @@ import AddExpenseModal from "./AddExpenseModal";
 import ResourcesTab from "./ResourcesTab";
 import AddIncomeModal, { INCOME_EMOJIS } from "./AddIncomeModal";
 import WorkbookPages from "./WorkbookPages";
+import BudgetTimeline from "./BudgetTimeline";
 
 
 // ─── EGGERTON DEMO CHARACTERS ─────────────────────────────────────────────────
@@ -324,6 +325,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
             {[
               ["dashboard", "📊", "Dashboard"],
               ["bills", "📋", "Bills & Budget"],
+              ["timeline", "📅", "Money Map"],
               ["tank", "🏦", "Holding Tank"],
               ["credit", "⭐", "Credit Score"],
               ["savings", "💰", "Savings"],
@@ -735,6 +737,11 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
 
             <SidebarNote theme={theme}>Your bills are not your enemy. They're the receipts of the life you're building. The budget column is your plan. The actual column is what happened. The difference between those two? That's where your power lives. Even $3 of awareness beats $300 of denial.</SidebarNote>
           </>
+        )}
+
+        {/* MONEY MAP TAB */}
+        {activeTab === "timeline" && (
+          <BudgetTimeline state={activeState} currentMonth={currentMonth} theme={theme} />
         )}
 
         {/* HOLDING TANK TAB */}

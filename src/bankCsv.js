@@ -266,6 +266,32 @@ export function applyTxnToBill(stateCopy, txn, monthIndex) {
 }
 
 /**
+ * Apply user-defined categorization rules to a transaction description.
+ * Rules are evaluated in priority order (high→low); first match wins.
+ *
+ * Returns { category, bill_match } from the matching rule, or null if
+ * nothing matches. Caller falls back to suggestCategory() in that case.
+ *
+ * @param {string} description — transaction description
+ * @param {Array}  rules       — array of { pattern, match_mode, category, bill_match, case_sensitive, priority }
+ */
+export function applyRules(description, rules) {
+  if (!Array.isArray(rules) || !rules.length || !description) return null;
+  const sorted = [...rules].sort((a, b) => (b.priority || 0) - (a.priority || 0));
+  for (const r of sorted) {
+    const desc = r.case_sensitive ? description : description.toLowerCase();
+    const pat  = r.case_sensitive ? r.pattern   : (r.pattern || "").toLowerCase();
+    if (!pat) continue;
+    let hit = false;
+    if (r.match_mode === "exact")        hit = desc === pat;
+    else if (r.match_mode === "starts_with") hit = desc.startsWith(pat);
+    else                                  hit = desc.includes(pat);   // 'contains'
+    if (hit) return { category: r.category, bill_match: r.bill_match || null, rule_id: r.id };
+  }
+  return null;
+}
+
+/**
  * Suggest a category for a transaction based on existing bills the user
  * already has saved. Returns { category, bill_match } or { category: null, bill_match: null }.
  *

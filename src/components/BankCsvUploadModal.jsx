@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../supabaseClient";
 import { THEMES } from "../constants";
-import { parseCsv, autoDetectMapping, rowToTransaction, txnHash, suggestCategory, txnDateToMonthIndex, applyTxnToBill, detectDateFormat } from "../bankCsv";
+import { parseCsv, autoDetectMapping, rowToTransaction, txnHash, suggestCategory, txnDateToMonthIndex, applyTxnToBill, detectDateFormat, applyRules } from "../bankCsv";
 import { CALENDAR_START_YEAR, CALENDAR_LENGTH } from "../constants";
 
 /**
@@ -16,7 +16,7 @@ import { CALENDAR_START_YEAR, CALENDAR_LENGTH } from "../constants";
  *   stateBills    — current state.bills (used to suggest categories)
  *   savedMappings — array of bank_csv_mappings rows for this user
  */
-export default function BankCsvUploadModal({ user, theme, onClose, onImported, stateBills, savedMappings = [], update }) {
+export default function BankCsvUploadModal({ user, theme, onClose, onImported, stateBills, savedMappings = [], rules = [], update }) {
   const t = THEMES[theme] || THEMES.dark;
   const [step, setStep] = useState(1);     // 1 = upload, 2 = map, 3 = preview/import
   const [headers, setHeaders] = useState([]);
@@ -76,7 +76,7 @@ export default function BankCsvUploadModal({ user, theme, onClose, onImported, s
   };
 
   // Compute the preview transactions from current mapping
-  const previewTxns = step === 3 ? buildPreview(headers, rows, mapping, stateBills, bankName) : [];
+  const previewTxns = step === 3 ? buildPreview(headers, rows, mapping, stateBills, bankName, rules) : [];
 
   const runImport = async () => {
     setImporting(true);
@@ -84,17 +84,21 @@ export default function BankCsvUploadModal({ user, theme, onClose, onImported, s
     setErr(null);
     setImportResult(null);
     try {
-      // Step 1 — parse + categorize all rows (sync, no awaits)
+      // Step 1 — parse + categorize all rows (sync, no awaits).
+      // Rules win first (user-defined patterns); fall back to bill-name match.
       const partials = [];
       for (const r of rows) {
         const txn = rowToTransaction(headers, r, mapping);
         if (!txn) continue;
-        const sug = suggestCategory(txn.description, stateBills);
+        const ruleHit = applyRules(txn.description, rules);
+        const sug = ruleHit || suggestCategory(txn.description, stateBills);
         partials.push({ ...txn, sug });
       }
       if (!partials.length) throw new Error("Nothing to import — check the mapping looks right.");
 
-      // Step 2 — hash IN PARALLEL (was sequential — much faster for large files)
+      // Step 2 — hash IN PARALLEL (was sequential — much faster for large files).
+      // Note: hash uses (date|description|amount|source) — does NOT include category.
+      // So if you re-categorize a row and re-import, it still dedupes correctly.
       setImportProgress(`Hashing ${partials.length} rows…`);
       const hashes = await Promise.all(
         partials.map(p => txnHash({ txn_date: p.txn_date, description: p.description, amount: p.amount, source: bankName }))
@@ -419,7 +423,7 @@ export default function BankCsvUploadModal({ user, theme, onClose, onImported, s
   );
 }
 
-function buildPreview(headers, rows, mapping, stateBills, source) {
+function buildPreview(headers, rows, mapping, stateBills, source, rules = []) {
   // Walk EVERY row so the count we show is real, not a preview cap.
   // We only render the first 8 in the table below, but the count tells
   // the user what the actual import would process.
@@ -427,8 +431,9 @@ function buildPreview(headers, rows, mapping, stateBills, source) {
   for (const r of rows) {
     const txn = rowToTransaction(headers, r, mapping);
     if (!txn) continue;
-    const sug = suggestCategory(txn.description, stateBills);
-    out.push({ ...txn, category: sug.category });
+    const ruleHit = applyRules(txn.description, rules);
+    const sug = ruleHit || suggestCategory(txn.description, stateBills);
+    out.push({ ...txn, category: sug.category, fromRule: !!ruleHit });
   }
   return out;
 }

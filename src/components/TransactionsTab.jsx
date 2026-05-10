@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../supabaseClient";
 import { THEMES, CATEGORIES, CAT_EMOJIS } from "../constants";
+import { INCOME_EMOJIS, INCOME_TYPES } from "./AddIncomeModal";
 import BankCsvUploadModal from "./BankCsvUploadModal";
+import CategorizationRulesPanel from "./CategorizationRulesPanel";
 
 const fmtMoney = (n) => {
   const abs = Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -22,6 +24,7 @@ export default function TransactionsTab({ user, theme, state, update }) {
   const t = THEMES[theme] || THEMES.dark;
   const [transactions, setTransactions] = useState([]);
   const [savedMappings, setSavedMappings] = useState([]);
+  const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
   const [filter, setFilter] = useState("all"); // all | uncategorized
@@ -30,12 +33,14 @@ export default function TransactionsTab({ user, theme, state, update }) {
   const load = useCallback(async () => {
     if (!user?.id) return;
     setLoading(true);
-    const [txns, maps] = await Promise.all([
+    const [txns, maps, rls] = await Promise.all([
       supabase.from("bank_transactions").select("*").eq("user_id", user.id).order("txn_date", { ascending: false }),
       supabase.from("bank_csv_mappings").select("*").eq("user_id", user.id).order("bank_name"),
+      supabase.from("categorization_rules").select("*").eq("user_id", user.id).order("priority", { ascending: false }),
     ]);
     setTransactions(txns.data || []);
     setSavedMappings(maps.data || []);
+    setRules(rls.data || []);
     setLoading(false);
   }, [user?.id]);
 
@@ -44,6 +49,27 @@ export default function TransactionsTab({ user, theme, state, update }) {
   const updateCategory = async (id, category) => {
     setTransactions(prev => prev.map(tx => tx.id === id ? { ...tx, category } : tx));
     await supabase.from("bank_transactions").update({ category }).eq("id", id);
+  };
+
+  const makeRuleFromTxn = async (tx) => {
+    if (!tx.category) { alert("Pick a category for this transaction first, then make a rule from it."); return; }
+    // Suggest a sensible pattern: first 1-3 distinctive words from the description
+    const guess = tx.description.split(/[\s,]+/).slice(0, 2).join(" ");
+    const pattern = window.prompt(
+      `Make a rule that auto-applies "${tx.category}" to any future transaction whose description contains:\n\n(edit the pattern if you want it broader/narrower)`,
+      guess
+    );
+    if (!pattern || !pattern.trim()) return;
+    const { error } = await supabase.from("categorization_rules").insert({
+      user_id: user.id,
+      pattern: pattern.trim(),
+      match_mode: "contains",
+      category: tx.category,
+      bill_match: tx.bill_match || null,
+      priority: 0,
+    });
+    if (error) { alert("Couldn't save rule: " + error.message); return; }
+    load();
   };
 
   const deleteTxn = async (id) => {
@@ -100,6 +126,15 @@ export default function TransactionsTab({ user, theme, state, update }) {
           ))}
         </div>
       )}
+
+      {/* Categorization rules panel */}
+      <CategorizationRulesPanel
+        user={user}
+        theme={theme}
+        rules={rules}
+        transactions={transactions}
+        onChanged={load}
+      />
 
       {/* Toolbar */}
       {transactions.length > 0 && (
@@ -182,7 +217,7 @@ export default function TransactionsTab({ user, theme, state, update }) {
                   key={tx.id}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "78px 1fr 110px 160px 28px",
+                    gridTemplateColumns: "78px 1fr 110px 160px 56px",
                     gap: 10, alignItems: "center",
                     padding: "10px 14px",
                     borderBottom: i < list.length - 1 ? "1px solid " + t.cardBorder : "none",
@@ -219,19 +254,59 @@ export default function TransactionsTab({ user, theme, state, update }) {
                     }}
                   >
                     <option value="">— uncategorized —</option>
-                    {CATEGORIES.map(c => (
-                      <option key={c} value={c}>{CAT_EMOJIS[c]} {c}</option>
-                    ))}
+                    {tx.amount < 0 ? (
+                      <>
+                        <optgroup label="💸 Expense category">
+                          {CATEGORIES.map(c => (
+                            <option key={c} value={c}>{CAT_EMOJIS[c]} {c}</option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="💰 Income source (rare for negative amounts)">
+                          {INCOME_TYPES.map(c => (
+                            <option key={c} value={c}>{INCOME_EMOJIS[c]} {c}</option>
+                          ))}
+                        </optgroup>
+                      </>
+                    ) : (
+                      <>
+                        <optgroup label="💰 Income source">
+                          {INCOME_TYPES.map(c => (
+                            <option key={c} value={c}>{INCOME_EMOJIS[c]} {c}</option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="💸 Expense category (rare for positive amounts)">
+                          {CATEGORIES.map(c => (
+                            <option key={c} value={c}>{CAT_EMOJIS[c]} {c}</option>
+                          ))}
+                        </optgroup>
+                      </>
+                    )}
                   </select>
-                  <button
-                    onClick={() => deleteTxn(tx.id)}
-                    title="Delete this transaction"
-                    style={{
-                      padding: "4px 8px", borderRadius: 5, border: "1px solid " + t.cardBorder,
-                      background: "transparent", color: t.textFaint, fontSize: 11, cursor: "pointer",
-                      fontFamily: "'DM Sans',sans-serif",
-                    }}
-                  >✕</button>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                    {tx.category && (
+                      <button
+                        onClick={() => makeRuleFromTxn(tx)}
+                        title="Save a rule that auto-categorizes future transactions like this"
+                        style={{
+                          padding: "2px 6px", borderRadius: 4,
+                          border: "1px solid " + t.gold + "55",
+                          background: t.gold + "12", color: t.gold,
+                          fontSize: 9, fontWeight: 700, cursor: "pointer",
+                          fontFamily: "'DM Sans',sans-serif",
+                          textTransform: "uppercase", letterSpacing: 0.5,
+                        }}
+                      >+ rule</button>
+                    )}
+                    <button
+                      onClick={() => deleteTxn(tx.id)}
+                      title="Delete this transaction"
+                      style={{
+                        padding: "2px 8px", borderRadius: 5, border: "1px solid " + t.cardBorder,
+                        background: "transparent", color: t.textFaint, fontSize: 11, cursor: "pointer",
+                        fontFamily: "'DM Sans',sans-serif",
+                      }}
+                    >✕</button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -245,6 +320,7 @@ export default function TransactionsTab({ user, theme, state, update }) {
           theme={theme}
           stateBills={state.bills}
           savedMappings={savedMappings}
+          rules={rules}
           update={update}
           onClose={() => setShowUpload(false)}
           onImported={() => { load(); }}

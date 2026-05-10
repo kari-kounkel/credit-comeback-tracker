@@ -1,8 +1,12 @@
 import { useState } from "react";
 import { THEMES, MONTHS } from "../constants";
 
-const INCOME_TYPES = ["Employment", "Side Hustle", "Freelance", "Benefits", "Child Support", "Investment", "Other"];
-const INCOME_EMOJIS = { "Employment": "💼", "Side Hustle": "🔥", "Freelance": "💻", "Benefits": "🏛️", "Child Support": "👶", "Investment": "📈", "Other": "💰" };
+const INCOME_TYPES = ["Employment", "Side Hustle", "Freelance", "Benefits", "Child Support", "Investment", "Interest", "Refund", "Transfer In", "Other"];
+const INCOME_EMOJIS = {
+  "Employment": "💼", "Side Hustle": "🔥", "Freelance": "💻",
+  "Benefits": "🏛️", "Child Support": "👶", "Investment": "📈",
+  "Interest": "💸", "Refund": "↩️", "Transfer In": "🔁", "Other": "💰",
+};
 
 export { INCOME_TYPES, INCOME_EMOJIS };
 

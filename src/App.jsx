@@ -17,25 +17,44 @@ export default function App() {
   const initDone = useRef(false);
 
   useEffect(() => {
-    // Safety timeout — never stuck on loading more than 4 seconds
-    const timeout = setTimeout(() => setLoading(false), 4000);
+    // Clear stale error fragments from URL
+    if (window.location.hash.includes("error")) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
 
-    const init = async () => {
+    // ── OPTIMISTIC FIRST PAINT ──
+    // If we have local cached data, show it INSTANTLY (synchronous localStorage
+    // read, ~1ms). The session check + fresh cloud sync run in the background
+    // and update state when they return. No blank loading screen for returning
+    // users.
+    const local = loadLocal();
+    if (local) {
+      setTrackerData(migrateData(local));
+      setLoading(false);
+    }
+
+    // Background: validate session, fetch fresh cloud data, swap auth screen
+    // in if there's no session.
+    (async () => {
       try {
-        // Clear stale error fragments from URL
-        if (window.location.hash.includes("error")) {
-          window.history.replaceState(null, "", window.location.pathname);
-        }
         const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) await handleUserReady(session.user);
+        if (session?.user) {
+          await handleUserReady(session.user);
+        } else if (!local) {
+          // No session AND no local data → show auth screen
+          setLoading(false);
+        } else {
+          // Have local data but no session → user is signed out, show auth
+          setUser(null);
+          setTrackerData(null);
+          setLoading(false);
+        }
       } catch (e) {
         console.error("Init error:", e);
+        setLoading(false);
       }
       initDone.current = true;
-      setLoading(false);
-    };
-
-    init();
+    })();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!initDone.current) return;
@@ -43,12 +62,11 @@ export default function App() {
       else if (event === "SIGNED_OUT") { setUser(null); setTrackerData(null); }
     });
 
-    return () => { clearTimeout(timeout); subscription.unsubscribe(); };
+    return () => { subscription.unsubscribe(); };
   }, []);
 
   const handleUserReady = async (authUser) => {
     setUser(authUser);
-    setLoading(true);
     setAuthError(null);
 
     // Show tutorial if this user hasn't seen it yet
@@ -56,6 +74,11 @@ export default function App() {
     if (!localStorage.getItem(tutorialKey)) {
       setShowTutorial(true);
     }
+
+    // If we don't already have data on screen (fresh load, no local cache),
+    // briefly show the loading screen while we fetch from cloud.
+    const haveDataAlready = trackerData != null || loadLocal() != null;
+    if (!haveDataAlready) setLoading(true);
 
     try {
       let cloudData = await loadFromCloud(authUser.id);
@@ -136,18 +159,15 @@ export default function App() {
     </>
   );
 
-  // Loading screen
+  // Loading screen — only briefly shown for fresh users with no cache.
+  // Returning users see their data instantly via the optimistic-load path.
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", background: t.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Sans',sans-serif" }}>
         {fontLink}
-        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, color: t.gold, marginBottom: 12 }}>The Credit Comeback Tracker</div>
-          <div style={{ color: t.textMuted, fontSize: 14, marginBottom: 20 }}>Loading your data...</div>
-          <button onClick={() => setLoading(false)} style={{ padding: "10px 24px", borderRadius: 10, border: "1px solid " + t.cardBorder, background: t.cardBg, color: t.textMuted, fontSize: 13, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
-            Taking too long? Tap here to continue →
-          </button>
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, color: t.gold, marginBottom: 6 }}>The Credit Comeback Tracker</div>
+          <div style={{ color: t.textMuted, fontSize: 13 }}>Loading…</div>
         </div>
       </div>
     );

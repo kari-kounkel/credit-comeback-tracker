@@ -81,15 +81,6 @@ export default function CreditActionPreview({ activeState, currentMonth, theme, 
             {currentMilestone.emoji} <span style={{ color: t.gold, fontWeight: 600 }}>{currentMilestone.label}</span>
           </div>
         )}
-        {nextMilestone && (
-          <div style={{ marginTop: 14, padding: "10px 14px", background: t.cardBg, borderRadius: 8, display: "inline-block" }}>
-            <div style={{ fontSize: 11, color: t.textMuted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Next milestone</div>
-            <div style={{ fontSize: 14, color: t.text }}>
-              {nextMilestone.emoji} <strong>{nextMilestone.label}</strong>
-              <span style={{ color: t.textMuted, marginLeft: 8 }}>· {nextMilestone.score - score} pts to go</span>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ── 12-MONTH MINI HISTORY ── */}

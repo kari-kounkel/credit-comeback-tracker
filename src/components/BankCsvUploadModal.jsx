@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../supabaseClient";
 import { THEMES } from "../constants";
-import { parseCsv, autoDetectMapping, rowToTransaction, txnHash, suggestCategory } from "../bankCsv";
+import { parseCsv, autoDetectMapping, rowToTransaction, txnHash, suggestCategory, txnDateToMonthIndex, applyTxnToBill, detectDateFormat } from "../bankCsv";
+import { CALENDAR_START_YEAR, CALENDAR_LENGTH } from "../constants";
 
 /**
  * BankCsvUploadModal — three-step flow:
@@ -15,7 +16,7 @@ import { parseCsv, autoDetectMapping, rowToTransaction, txnHash, suggestCategory
  *   stateBills    — current state.bills (used to suggest categories)
  *   savedMappings — array of bank_csv_mappings rows for this user
  */
-export default function BankCsvUploadModal({ user, theme, onClose, onImported, stateBills, savedMappings = [] }) {
+export default function BankCsvUploadModal({ user, theme, onClose, onImported, stateBills, savedMappings = [], update }) {
   const t = THEMES[theme] || THEMES.dark;
   const [step, setStep] = useState(1);     // 1 = upload, 2 = map, 3 = preview/import
   const [headers, setHeaders] = useState([]);
@@ -29,6 +30,7 @@ export default function BankCsvUploadModal({ user, theme, onClose, onImported, s
   });
   const [saveMapping, setSaveMapping] = useState(true);
   const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState("");
   const [importResult, setImportResult] = useState(null);
   const [err, setErr] = useState(null);
   const fileInputRef = useRef(null);
@@ -45,6 +47,13 @@ export default function BankCsvUploadModal({ user, theme, onClose, onImported, s
       setRows(parsed.rows);
       setBankName(file.name.replace(/\.[^.]+$/, ""));   // default to file name without extension
       const auto = autoDetectMapping(parsed.headers);
+      // Sniff the actual date format from the first row so the dropdown
+      // lands on the right value (ISO vs US vs European).
+      if (auto.col_date && parsed.rows.length > 0) {
+        const dateColIdx = parsed.headers.indexOf(auto.col_date);
+        const sample = dateColIdx >= 0 ? parsed.rows[0][dateColIdx] : "";
+        auto.date_format = detectDateFormat(sample);
+      }
       setMapping(auto);
       setStep(2);
     } catch (e) {
@@ -71,37 +80,50 @@ export default function BankCsvUploadModal({ user, theme, onClose, onImported, s
 
   const runImport = async () => {
     setImporting(true);
+    setImportProgress("Preparing rows…");
     setErr(null);
     setImportResult(null);
     try {
-      // Build full set of transactions from rows (not just preview)
-      const built = [];
+      // Step 1 — parse + categorize all rows (sync, no awaits)
+      const partials = [];
       for (const r of rows) {
         const txn = rowToTransaction(headers, r, mapping);
         if (!txn) continue;
         const sug = suggestCategory(txn.description, stateBills);
-        const hash = await txnHash({ ...txn, source: bankName });
-        built.push({
-          user_id: user.id,
-          txn_date: txn.txn_date,
-          description: txn.description,
-          amount: txn.amount,
-          category: sug.category,
-          bill_match: sug.bill_match,
-          source: bankName,
-          raw_data: txn.raw_data,
-          hash,
-        });
+        partials.push({ ...txn, sug });
       }
+      if (!partials.length) throw new Error("Nothing to import — check the mapping looks right.");
 
-      if (!built.length) throw new Error("Nothing to import — check the mapping looks right.");
+      // Step 2 — hash IN PARALLEL (was sequential — much faster for large files)
+      setImportProgress(`Hashing ${partials.length} rows…`);
+      const hashes = await Promise.all(
+        partials.map(p => txnHash({ txn_date: p.txn_date, description: p.description, amount: p.amount, source: bankName }))
+      );
+      const built = partials.map((p, i) => ({
+        user_id: user.id,
+        txn_date: p.txn_date,
+        description: p.description,
+        amount: p.amount,
+        category: p.sug.category,
+        bill_match: p.sug.bill_match,
+        source: bankName,
+        raw_data: p.raw_data,
+        hash: hashes[i],
+      }));
 
-      // Bulk insert with onConflict to skip dupes
-      const { data, error } = await supabase
-        .from("bank_transactions")
-        .upsert(built, { onConflict: "user_id,hash", ignoreDuplicates: true })
-        .select("id");
-      if (error) throw error;
+      // Step 3 — upsert in BATCHES of 100. Single 500-row request can stall.
+      const BATCH = 100;
+      let totalInserted = 0;
+      for (let i = 0; i < built.length; i += BATCH) {
+        const chunk = built.slice(i, i + BATCH);
+        setImportProgress(`Saving rows ${i + 1}–${Math.min(i + BATCH, built.length)} of ${built.length}…`);
+        const { data, error } = await supabase
+          .from("bank_transactions")
+          .upsert(chunk, { onConflict: "user_id,hash", ignoreDuplicates: true })
+          .select("id");
+        if (error) throw error;
+        totalInserted += (data?.length || 0);
+      }
 
       // Save the mapping for next time, if requested
       if (saveMapping && bankName.trim()) {
@@ -119,14 +141,33 @@ export default function BankCsvUploadModal({ user, theme, onClose, onImported, s
         }, { onConflict: "user_id,bank_name" });
       }
 
-      const inserted = data?.length || 0;
+      const inserted = totalInserted;
       const skipped = built.length - inserted;
-      setImportResult({ attempted: built.length, inserted, skipped });
+
+      // ── AUTO-APPLY MATCHED TRANSACTIONS TO THEIR BILLS ──
+      // For every transaction we just imported that has a bill_match, look up
+      // the bill in the same month and update its actual (or push to entries[]
+      // for Variable). One single update() call so we re-render once.
+      let applied = 0;
+      if (update) {
+        const matchedTxns = built.filter(b => b.bill_match);
+        if (matchedTxns.length) {
+          update((s) => {
+            for (const txn of matchedTxns) {
+              const monthIdx = txnDateToMonthIndex(txn.txn_date, CALENDAR_START_YEAR, CALENDAR_LENGTH);
+              if (applyTxnToBill(s, txn, monthIdx)) applied++;
+            }
+          });
+        }
+      }
+
+      setImportResult({ attempted: built.length, inserted, skipped, applied });
       if (onImported) onImported(inserted);
     } catch (e) {
       setErr("Import failed: " + e.message);
     } finally {
       setImporting(false);
+      setImportProgress("");
     }
   };
 
@@ -300,9 +341,23 @@ export default function BankCsvUploadModal({ user, theme, onClose, onImported, s
         {/* ── STEP 3: preview + import ── */}
         {step === 3 && (
           <div>
-            <div style={{ fontSize: 12, color: t.textMuted, marginBottom: 10 }}>
-              Showing first {Math.min(previewTxns.length, 8)} of {previewTxns.length} parseable rows · source: <strong style={{ color: t.text }}>{bankName}</strong>
+            <div style={{ fontSize: 12, color: t.textMuted, marginBottom: 10, lineHeight: 1.6 }}>
+              <strong style={{ color: t.text }}>{previewTxns.length}</strong> of <strong style={{ color: t.text }}>{rows.length}</strong> rows parsed from your CSV
+              {previewTxns.length < rows.length && (
+                <span style={{ color: t.gold }}> · {rows.length - previewTxns.length} skipped (likely missing date or amount)</span>
+              )}
+              <br />
+              Showing first {Math.min(previewTxns.length, 8)} below · source: <strong style={{ color: t.text }}>{bankName}</strong>
             </div>
+            {previewTxns.length === 0 && (
+              <div style={{
+                padding: 16, background: t.red + "12", color: t.red,
+                border: "1px solid " + t.red + "44", borderRadius: 8,
+                fontSize: 13, lineHeight: 1.6, marginBottom: 16,
+              }}>
+                ⚠️ Couldn't parse any rows with this mapping. Most common cause: the <strong>date format</strong> doesn't match what's actually in the file. Click <strong>← Back to mapping</strong> and try a different date format option (the dropdown below the date column).
+              </div>
+            )}
             <div style={{ background: t.cardBg, border: "1px solid " + t.cardBorder, borderRadius: 8, overflow: "hidden", marginBottom: 16 }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                 <thead>
@@ -331,16 +386,28 @@ export default function BankCsvUploadModal({ user, theme, onClose, onImported, s
 
             {importResult && (
               <div style={{ padding: 12, background: t.green + "18", border: "1px solid " + t.green + "44", color: t.green, borderRadius: 8, fontSize: 13, marginBottom: 12, lineHeight: 1.6 }}>
-                ✓ Imported <strong>{importResult.inserted}</strong> new transactions{importResult.skipped > 0 && ` (skipped ${importResult.skipped} duplicates)`}.
+                ✓ Imported <strong>{importResult.inserted}</strong> new transactions
+                {importResult.skipped > 0 && ` · skipped ${importResult.skipped} duplicates`}
+                {importResult.applied > 0 && (
+                  <>
+                    <br />
+                    ↗ Auto-applied <strong>{importResult.applied}</strong> to your existing bills (Bills &amp; Budget will reflect the new actuals).
+                  </>
+                )}
               </div>
             )}
 
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setStep(2)} style={btnSecondary(t)} disabled={importing}>← Back to mapping</button>
               {!importResult ? (
-                <button onClick={runImport} disabled={importing} style={{ ...btnPrimary(t), flex: 1 }}>
-                  {importing ? "Importing…" : `Import ${previewTxns.length} transactions`}
-                </button>
+                <div style={{ flex: 1 }}>
+                  <button onClick={runImport} disabled={importing || previewTxns.length === 0} style={{ ...btnPrimary(t), width: "100%", opacity: previewTxns.length === 0 ? 0.5 : 1 }}>
+                    {importing ? "Importing…" : `Import all ${previewTxns.length} transactions`}
+                  </button>
+                  {importing && importProgress && (
+                    <div style={{ marginTop: 6, fontSize: 11, color: t.textMuted, textAlign: "center" }}>{importProgress}</div>
+                  )}
+                </div>
               ) : (
                 <button onClick={onClose} style={{ ...btnPrimary(t), flex: 1 }}>Done</button>
               )}
@@ -353,8 +420,11 @@ export default function BankCsvUploadModal({ user, theme, onClose, onImported, s
 }
 
 function buildPreview(headers, rows, mapping, stateBills, source) {
+  // Walk EVERY row so the count we show is real, not a preview cap.
+  // We only render the first 8 in the table below, but the count tells
+  // the user what the actual import would process.
   const out = [];
-  for (const r of rows.slice(0, 12)) {
+  for (const r of rows) {
     const txn = rowToTransaction(headers, r, mapping);
     if (!txn) continue;
     const sug = suggestCategory(txn.description, stateBills);

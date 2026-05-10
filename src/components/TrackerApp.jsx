@@ -837,7 +837,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
 
         {/* MONEY → Transactions (bank CSV import + categorize) */}
         {activeTab === "money" && moneySubTab === "transactions" && !demoCharacter && (
-          <TransactionsTab user={user} theme={theme} state={activeState} />
+          <TransactionsTab user={user} theme={theme} state={activeState} update={update} />
         )}
         {activeTab === "money" && moneySubTab === "transactions" && demoCharacter && (
           <div style={{ padding: 30, textAlign: "center", color: t.textMuted, fontSize: 13, background: t.cardBg, border: "1px dashed " + t.cardBorder, borderRadius: 12 }}>

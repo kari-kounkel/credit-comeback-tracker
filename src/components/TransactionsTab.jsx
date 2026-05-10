@@ -18,7 +18,7 @@ const monthLabel = (yyyy_mm) => {
  * Shows imported bank transactions grouped by month (newest first).
  * Each row has an inline category dropdown.
  */
-export default function TransactionsTab({ user, theme, state }) {
+export default function TransactionsTab({ user, theme, state, update }) {
   const t = THEMES[theme] || THEMES.dark;
   const [transactions, setTransactions] = useState([]);
   const [savedMappings, setSavedMappings] = useState([]);
@@ -193,9 +193,16 @@ export default function TransactionsTab({ user, theme, state }) {
                   </div>
                   <div>
                     <div style={{ fontSize: 13, color: t.text }}>{tx.description}</div>
-                    {tx.source && (
-                      <div style={{ fontSize: 10, color: t.textFaint, marginTop: 2 }}>{tx.source}{tx.bill_match ? ` · matched: ${tx.bill_match}` : ""}</div>
-                    )}
+                    <div style={{ fontSize: 10, color: t.textFaint, marginTop: 2, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                      {tx.source && <span>{tx.source}</span>}
+                      {tx.bill_match && (
+                        <span style={{
+                          padding: "1px 6px", borderRadius: 4,
+                          background: t.green + "22", color: t.green,
+                          fontWeight: 600, letterSpacing: 0.3,
+                        }}>↗ applied to {tx.bill_match}</span>
+                      )}
+                    </div>
                   </div>
                   <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, color: tx.amount < 0 ? t.red : t.green, textAlign: "right", fontWeight: 600 }}>
                     {fmtMoney(tx.amount)}
@@ -238,6 +245,7 @@ export default function TransactionsTab({ user, theme, state }) {
           theme={theme}
           stateBills={state.bills}
           savedMappings={savedMappings}
+          update={update}
           onClose={() => setShowUpload(false)}
           onImported={() => { load(); }}
         />

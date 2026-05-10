@@ -12,6 +12,7 @@ import PendingViewRequestsBanner from "./PendingViewRequestsBanner";
 import CoachAccessPanel from "./CoachAccessPanel";
 import CreditActionPreview from "./CreditActionPreview";
 import AddEntryModal from "./AddEntryModal";
+import TransactionsTab from "./TransactionsTab";
 
 
 // ─── EGGERTON DEMO CHARACTERS ─────────────────────────────────────────────────
@@ -396,10 +397,11 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
         {activeTab === "money" && (
           <div style={{ display: "flex", gap: 4, marginBottom: 16, borderBottom: "1px solid " + t.cardBorder, paddingBottom: 0, flexWrap: "wrap" }}>
             {[
-              ["budget",   "📋", "Bills & Budget"],
-              ["forecast", "📅", "Money Map"],
-              ["tank",     "🏦", "Holding Tank"],
-              ["savings",  "💰", "Savings"],
+              ["budget",       "📋", "Bills & Budget"],
+              ["transactions", "🏦", "Transactions"],
+              ["forecast",     "📅", "Money Map"],
+              ["tank",         "🪣", "Holding Tank"],
+              ["savings",      "💰", "Savings"],
             ].map(([id, icon, label]) => (
               <button key={id} onClick={() => setMoneySubTab(id)}
                 style={{
@@ -833,6 +835,16 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
           </>
         )}
 
+        {/* MONEY → Transactions (bank CSV import + categorize) */}
+        {activeTab === "money" && moneySubTab === "transactions" && !demoCharacter && (
+          <TransactionsTab user={user} theme={theme} state={activeState} />
+        )}
+        {activeTab === "money" && moneySubTab === "transactions" && demoCharacter && (
+          <div style={{ padding: 30, textAlign: "center", color: t.textMuted, fontSize: 13, background: t.cardBg, border: "1px dashed " + t.cardBorder, borderRadius: 12 }}>
+            🏦 Bank Transactions imports are tied to a real account. Switch out of demo mode to use this feature.
+          </div>
+        )}
+
         {/* MONEY → Money Map */}
         {activeTab === "money" && moneySubTab === "forecast" && (
           <BudgetTimeline state={activeState} currentMonth={currentMonth} theme={theme} />
@@ -841,7 +853,7 @@ export default function TrackerApp({ user, initialData, onSave, onLogout, theme,
         {/* MONEY → Holding Tank */}
         {activeTab === "money" && moneySubTab === "tank" && (
           <>
-            <h2 style={{ color: t.gold, fontFamily: "'Playfair Display',serif", fontSize: 20, margin: "0 0 8px" }}>{"🏦"} Holding Tank Ledger</h2>
+            <h2 style={{ color: t.gold, fontFamily: "'Playfair Display',serif", fontSize: 20, margin: "0 0 8px" }}>{"🪣"} Holding Tank Ledger</h2>
             <p style={{ color: t.textMuted, fontSize: 13, margin: "0 0 20px", lineHeight: 1.6 }}>The two-book system: last month's income pays this month's bills. Your Holding Tank is where money sits between earning it and spending it.</p>
 
             {/* How it works */}
